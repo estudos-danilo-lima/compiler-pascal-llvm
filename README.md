@@ -6,8 +6,11 @@ Compiler for pascal language to llvm
 - java and javac
 
 # Installation
-`git clone this repository and run make in terminal`
+To install this compiler you must clone this repository as:
+  `git clone https://github.com/daniloelima/compiler-pascal-llvm.git`
+
 
 # Running
-``make in terminal ``
-[make run]
+To run you use the makefile in terminal like:
+  `$ make`
+  `$ make run`
