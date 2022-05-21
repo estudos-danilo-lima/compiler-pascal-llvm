@@ -10,4 +10,4 @@ Compiler for pascal language to llvm
 
 # Running
 ``make in terminal ``
-make run
+[make run]
