@@ -16,5 +16,8 @@ To install this compiler you must clone this repository as:
 To run you use the makefile in terminal like:
   ``` 
    $ make 
+  ```
+then
+  ``` 
    $ make run
   ```
