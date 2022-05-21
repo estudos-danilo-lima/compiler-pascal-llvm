@@ -6,4 +6,8 @@ Compiler for pascal language to llvm
 - java and javac
 
 # Installation
-git clone this repository and run make in terminal
+`git clone this repository and run make in terminal`
+
+# Running
+``make in terminal ``
+make run
