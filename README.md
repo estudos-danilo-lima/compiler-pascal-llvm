@@ -1,4 +1,9 @@
-# compiler-pascal-llvm
+## Compiler for pascal to llvm
 Compiler for pascal language to llvm
 
-Bora tropa
+# Requirements
+- antlr
+- java and javac
+
+# Installation
+git clone this repository and run make in terminal
