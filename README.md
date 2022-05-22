@@ -11,13 +11,24 @@ To install this compiler you must clone this repository as:
   git clone https://github.com/daniloelima/compiler-pascal-llvm.git 
   ```
 
+After installation, alter the value of the ROOT(line 10) variable in the Makefile with your path (result of pwd inside the folder).
 
 # Running
-To run you use the makefile in terminal like:
+To run you must first generate the lexer and parser, like:
   ``` 
    make 
   ```
-then
+Then, you can either run a single example like:
   ``` 
-   make run
+   make run FILE=../tests/in/SELECT AN EXAMPLE FROM THE AVAILABLE ONES.
+  ```
+
+Or run all the available examples like:
+  ```
+  make runall
+  ```
+
+Alternatively, runing the snipet bellow will read input from stdin, when finished press 'CTRL+D':
+  ```
+    make run
   ```
