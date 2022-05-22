@@ -3,36 +3,46 @@
 JAVA=java
 JAVAC=javac
 
-LIB_PATH=library
-SRC_PATH=source
-EXP_PATH=examples
+# Eu uso ROOT como o diretório raiz para os meus labs.
+# YEAR=$(shell pwd | grep -o '20..-.')
+# ROOT=/home/zambon/Teaching/$(YEAR)/CC/labs
 
-ANTLR_PATH=$(LIB_PATH)/antlr-4.10.1-complete.jar
+ROOT=/home/fernando/Documentos/compiladores/compiler-pascal-llvm
+
+ANTLR_PATH=$(ROOT)/tools/antlr-4.10.1-complete.jar
 CLASS_PATH_OPTION=-cp .:$(ANTLR_PATH)
 
+# Comandos como descritos na página do ANTLR.
 ANTLR4=$(JAVA) -jar $(ANTLR_PATH)
 GRUN=$(JAVA) $(CLASS_PATH_OPTION) org.antlr.v4.gui.TestRig
+
+# Diretório para aonde vão os arquivos gerados.
+GEN_PATH=lexer
+
+# Diretório para os casos de teste
+DATA=$(ROOT)/tests
+IN=$(DATA)/in
 
 all: antlr javac
 	@echo "Done."
 
-antlr: lexer.g4 parser.g4
-	$(ANTLR4) -o $(SRC_PATH) lexer.g4 parser.g4
+antlr: pascal.g4
+	$(ANTLR4) -o $(GEN_PATH) pascal.g4
 
 javac:
-	$(JAVAC) $(CLASS_PATH_OPTION) $(SRC_PATH)/*.java
+	$(JAVAC) $(CLASS_PATH_OPTION) $(GEN_PATH)/*.java
 
 # Veja a explicação no README
 run:
-	cd $(SRC_PATH) && $(GRUN) EZLexer tokens -tokens $(FILE)
+	cd $(GEN_PATH) && $(GRUN) pascal program $(FILE)
 
 runall:
-	-for FILE in $(EXP_PATH)/*.ezl; do \
-	 	cd $(SRC_PATH) && \
+	-for FILE in $(IN)/*.pas; do \
+	 	cd $(GEN_PATH) && \
 	 	echo -e "\nRunning $${FILE}" && \
-	 	$(GRUN) EZLexer tokens -tokens $${FILE} && \
+	 	$(GRUN) pascal program $${FILE} && \
 	 	cd .. ; \
 	done;
 
 clean:
-	@rm -rf $(SRC_PATH)
+	@rm -rf $(GEN_PATH)
