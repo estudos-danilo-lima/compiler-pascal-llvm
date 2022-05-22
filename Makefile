@@ -1,32 +1,38 @@
+# Modifique as variaveis conforme o seu setup.
+
 JAVA=java
 JAVAC=javac
 
 LIB_PATH=library
 SRC_PATH=source
+EXP_PATH=examples
 
 ANTLR_PATH=$(LIB_PATH)/antlr-4.10.1-complete.jar
 CLASS_PATH_OPTION=-cp .:$(ANTLR_PATH)
 
-# baseado no exemplo do professor
 ANTLR4=$(JAVA) -jar $(ANTLR_PATH)
 GRUN=$(JAVA) $(CLASS_PATH_OPTION) org.antlr.v4.gui.TestRig
-
-#configurar corretamente depois
-
 
 all: antlr javac
 	@echo "Done."
 
-#antlr: source/lexer.g4 source/parser.g4
-#	$(ANTLR4)
-antlr: 
-	$(ANTLR4) $(GNAME).g
+antlr: EZLexer.g
+	$(ANTLR4) -o $(SRC_PATH) EZLexer.g
 
 javac:
-	$(JAVAC) $(CLASS_PATH_OPTION) *.java
+	$(JAVAC) $(CLASS_PATH_OPTION) $(SRC_PATH)/*.java
 
+# Veja a explicação no README
 run:
-	$(GRUN) $(GNAME) tokens $(FILE)
+	cd $(SRC_PATH) && $(GRUN) EZLexer tokens -tokens $(FILE)
+
+runall:
+	-for FILE in $(EXP_PATH)/*.ezl; do \
+	 	cd $(SRC_PATH) && \
+	 	echo -e "\nRunning $${FILE}" && \
+	 	$(GRUN) EZLexer tokens -tokens $${FILE} && \
+	 	cd .. ; \
+	done;
 
 clean:
-	@rm -rf $(GNAME).class $(GNAME).interp $(GNAME).java $(GNAME).tokens
+	@rm -rf $(SRC_PATH)
