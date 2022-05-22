@@ -16,8 +16,8 @@ GRUN=$(JAVA) $(CLASS_PATH_OPTION) org.antlr.v4.gui.TestRig
 all: antlr javac
 	@echo "Done."
 
-antlr: EZLexer.g
-	$(ANTLR4) -o $(SRC_PATH) EZLexer.g
+antlr: lexer.g4 parser.g4
+	$(ANTLR4) -o $(SRC_PATH) lexer.g4 parser.g4
 
 javac:
 	$(JAVAC) $(CLASS_PATH_OPTION) $(SRC_PATH)/*.java
