@@ -11,8 +11,6 @@ To install this compiler you must clone this repository as:
   git clone https://github.com/daniloelima/compiler-pascal-llvm.git 
   ```
 
-After installation, alter the value of the ROOT(line 10) variable in the Makefile with your path (result of pwd inside the folder).
-
 # Running
 To run you must first generate the lexer and parser, like:
   ``` 

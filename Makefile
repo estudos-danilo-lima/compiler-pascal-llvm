@@ -1,13 +1,7 @@
-# Modifique as variaveis conforme o seu setup.
-
 JAVA=java
 JAVAC=javac
 
-# Eu uso ROOT como o diretório raiz para os meus labs.
-# YEAR=$(shell pwd | grep -o '20..-.')
-# ROOT=/home/zambon/Teaching/$(YEAR)/CC/labs
-
-ROOT=/home/fernando/Documentos/compiladores/compiler-pascal-llvm
+ROOT=$(shell pwd)
 
 ANTLR_PATH=$(ROOT)/tools/antlr-4.10.1-complete.jar
 CLASS_PATH_OPTION=-cp .:$(ANTLR_PATH)
