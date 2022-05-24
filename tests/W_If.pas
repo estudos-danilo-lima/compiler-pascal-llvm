@@ -1,3 +1,6 @@
+(* ERRO Sintático *)
+(* Comparador do IF incompleto, esperando variável ou number e encontra parênteses. Linha 13 *)
+
 program ifProgram;
 
 var

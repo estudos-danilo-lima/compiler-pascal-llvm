@@ -15,7 +15,6 @@ GEN_PATH=lexer
 
 # Diretório para os casos de teste
 DATA=$(ROOT)/tests
-IN=$(DATA)/in
 
 all: antlr javac
 	@echo "Done."
@@ -28,10 +27,10 @@ javac:
 
 # Veja a explicação no README
 run:
-	cd $(GEN_PATH) && $(GRUN) pascal program $(FILE)
+	cd $(GEN_PATH) && $(GRUN) pascal program -tokens $(FILE)
 
 runall:
-	-for FILE in $(IN)/*.pas; do \
+	-for FILE in $(DATA)/*.pas; do \
 	 	cd $(GEN_PATH) && \
 	 	echo -e "\nRunning $${FILE}" && \
 	 	$(GRUN) pascal program $${FILE} && \
