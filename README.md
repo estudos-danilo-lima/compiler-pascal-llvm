@@ -1,8 +1,10 @@
 # Compiler for pascal to llvm
 Compiler for pascal language to llvm
 
+## Reports
+All the reports about the checkpoints are inside the documentation folder.
+
 ## Requirements
-- antlr
 - java and javac
 
 ## Installation
@@ -12,13 +14,18 @@ To install this compiler you must clone this repository as:
   ```
 
 ## Running
+After clonning the repository, you need to acess the folder, like:
+  ```
+  cd compiler-pascal-llvm
+  ```
+
 To run you must first generate the lexer and parser, like:
   ``` 
-   make 
+  make 
   ```
 Then, you can either run a single example like:
   ``` 
-   make run FILE=../tests/in/SELECT AN EXAMPLE FROM THE AVAILABLE ONES.
+  make run FILE=../tests/in/SELECT AN EXAMPLE FROM THE AVAILABLE ONES.
   ```
 
 Or run all the available examples like:
@@ -28,5 +35,5 @@ Or run all the available examples like:
 
 Alternatively, runing the snipet bellow will read input from stdin, when finished press 'CTRL+D':
   ```
-    make run
+  make run
   ```
