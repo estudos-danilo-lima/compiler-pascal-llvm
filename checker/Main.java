@@ -7,8 +7,9 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import parser.pascalLexer;
-import parser.pascalParser;
+import lexer.pascalLexer;
+import lexer.pascalParser;
+
 
 public class Main {
 

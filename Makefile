@@ -13,8 +13,15 @@ GRUN=$(JAVA) $(CLASS_PATH_OPTION) org.antlr.v4.gui.TestRig
 # Diretório para aonde vão os arquivos gerados.
 GEN_PATH=lexer
 
+# Diretório aonde está a classe com a função main.
+MAIN_PATH=checker
+
+# Diretório para os arquivos .class
+BIN_PATH=bin
+
 # Diretório para os casos de teste
 DATA=$(ROOT)/tests
+OUT=$(ROOT)/tests/out
 
 all: antlr javac
 	@echo "Done."
@@ -27,9 +34,22 @@ javac:
 
 # Veja a explicação no README
 run:
+	$(JAVA) $(CLASS_PATH_OPTION):$(BIN_PATH) $(MAIN_PATH)/Main $(FILE)
+
+
+# runall:
+# 	-for FILE in $(DATA)/*.pas; do \
+# 	 	cd $(GEN_PATH) && \
+# 	 	echo -e "\nRunning $${FILE}" && \
+# 	 	$(GRUN) pascal program $${FILE} && \
+# 	 	cd .. ; \
+# 	done;
+
+
+runlexerparser:
 	cd $(GEN_PATH) && $(GRUN) pascal program -tokens $(FILE)
 
-runall:
+runallpl:
 	-for FILE in $(DATA)/*.pas; do \
 	 	cd $(GEN_PATH) && \
 	 	echo -e "\nRunning $${FILE}" && \
@@ -38,4 +58,4 @@ runall:
 	done;
 
 clean:
-	@rm -rf $(GEN_PATH)
+	@rm -rf $(GEN_PATH) $(BIN_PATH) $(OUT)

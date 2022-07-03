@@ -1,0 +1,11 @@
+{
+    "java.project.sourcePaths": [
+        "tools",
+        ".",
+        "checker"
+    ],
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "tools/antlr-4.10.1-complete.jar"
+    ]
+}

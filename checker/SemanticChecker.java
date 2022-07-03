@@ -27,36 +27,17 @@ import static typing.Type.NO_TYPE;
 import static typing.Type.REAL_TYPE;
 import static typing.Type.STR_TYPE;
 
-import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.TerminalNode;
-
 import ast.AST;
-import parser.EZParser;
-import parser.EZParser.Assign_stmtContext;
-import parser.EZParser.EqLtContext;
-import parser.EZParser.ExprFalseContext;
-import parser.EZParser.ExprIdContext;
-import parser.EZParser.ExprIntValContext;
-import parser.EZParser.ExprParContext;
-import parser.EZParser.ExprRealValContext;
-import parser.EZParser.ExprStrValContext;
-import parser.EZParser.ExprTrueContext;
-import parser.EZParser.If_stmtContext;
-import parser.EZParser.PlusMinusContext;
-import parser.EZParser.ProgramContext;
-import parser.EZParser.Read_stmtContext;
-import parser.EZParser.Repeat_stmtContext;
-import parser.EZParser.StmtContext;
-import parser.EZParser.Stmt_sectContext;
-import parser.EZParser.TimesOverContext;
-import parser.EZParser.Vars_sectContext;
-import parser.EZParser.Write_stmtContext;
-import parser.EZParserBaseVisitor;
+import org.antlr.v4.runtime.Token;
 import tables.StrTable;
 import tables.VarTable;
+
 import typing.Conv;
 import typing.Conv.Unif;
 import typing.Type;
+
+
+
 
 /*
  * Analisador semântico de EZLang implementado como um visitor
@@ -81,7 +62,7 @@ import typing.Type;
  * as ações semânticas do parser já faziam a construção da AST junto com a análise
  * sintática. Aqui, é o inverso, por isso temos que visitar os filhos primeiro.
  */
-public class SemanticChecker extends EZParserBaseVisitor<AST> {
+public class SemanticChecker extends pascalBaseVisitor<AST> {
 
 	private StrTable st = new StrTable();   // Tabela de strings.
     private VarTable vt = new VarTable();   // Tabela de variáveis.
@@ -157,4 +138,129 @@ public class SemanticChecker extends EZParserBaseVisitor<AST> {
     // ----------------------------------------------------------------------------
     // Visitadores.
 	
+
 	//Pegar visitadores que o CP2 pede
+
+    @Override 
+    public AST visitProgram(pascalParser.ProgramContext ctx) {
+        AST programHeading = visit(ctx.programHeading());
+        AST block          = visit(ctx.block());
+        this.root = AST.newSubtree(PROGRAM_NODE, NO_TYPE, programHeading, block);
+        return this.root;
+    }
+
+    @Override
+    public AST visitProgramHeading(pascalParser.ProgramHeadingContext ctx) {
+        
+        AST identifier = visit(ctx.identifier());
+        
+        AST identifierList = AST.newSubtree(IDENTIFIER_LIST_NODE, NO_TYPE);
+
+        for (int i = 0; i <ctx.indentifierList().size(); i++){
+            AST child = visit(ctx.indentifierList(i));
+            identifierList.addChild(child);
+        }
+        
+        this.root = AST.newSubtree(PROGRAM_HEADING_NODE, NO_TYPE, identifier, identifierList);
+        return this.root; 
+    }
+
+    @Override
+    public AST visitIdentifier(pascalParser.IdentifierContext ctx) {
+        this.root = AST.newSubtree(IDENTIFIER, NO_TYPE);
+        return newVar(ctx.IDENT().getSymbol());
+        //return this.root; 
+    }
+	
+
+	@Override 
+    public AST visitVariableDeclaration(pascalParser.VariableDeclarationContext ctx) { 
+        visit(ctx.type_());
+        AST node = AST.newSubtree(VAR_LIST_NODE, NO_TYPE);
+    	for (int i = 0; i < ctx.identifierList().size(); i++) {
+    		AST child = visit(ctx.identifierList(i));
+            // Cria e retorna um nó para a variável.
+    		node.addChild(child);
+    	}
+    	return node;
+    }
+
+    @Override 
+    public AST visitBool_(pascalParser.Bool_Context ctx) { 
+        this.lastDeclType = Type.BOOL_TYPE;
+    	return null;
+    }
+
+    @Override 
+    public AST visitUnsignedInteger(pascalParser.UnsignedIntegerContext ctx) { 
+        this.lastDeclType = Type.INT_TYPE;
+    	return null;
+    }
+
+	@Override 
+    public AST visitUnsignedReal(pascalParser.UnsignedRealContext ctx) { 
+        this.lastDeclType = Type.REAL_TYPE;
+    	return null;
+    }
+
+    @Override 
+    public AST visitString(pascalParser.StringContext ctx) { 
+        this.lastDeclType = Type.STR_TYPE;
+    	return null;
+    }
+    /*
+	@Override 
+    public AST visitProcedureAndFunctionDeclarationPart(pascalParser.ProcedureAndFunctionDeclarationPartContext ctx) { 
+        return visitChildren(ctx); 
+    }
+
+	@Override 
+    public AST visitProcedureOrFunctionDeclaration(pascalParser.ProcedureOrFunctionDeclarationContext ctx) {
+        return visitChildren(ctx); 
+    }
+
+	@Override 
+    public AST visitProcedureDeclaration(pascalParser.ProcedureDeclarationContext ctx) {
+        return visitChildren(ctx); 
+    }
+
+    @Override 
+    public T visitMultiplicativeoperator(pascalParser.MultiplicativeoperatorContext ctx) { 
+        return visitChildren(ctx); 
+    }
+    
+    @Override 
+    public T visitAdditiveoperator(pascalParser.AdditiveoperatorContext ctx) { 
+        return visitChildren(ctx); 
+    }
+
+    @Override 
+    public T visitRelationaloperator(pascalParser.RelationaloperatorContext ctx) { 
+        return visitChildren(ctx); 
+    }
+
+    @Override 
+    public T visitAssignmentStatement(pascalParser.AssignmentStatementContext ctx) { 
+        return visitChildren(ctx); 
+    }
+
+    @Override 
+    public T visitIfStatement(pascalParser.IfStatementContext ctx) { 
+        return visitChildren(ctx); 
+    }
+
+    @Override 
+    public T visitWhileStatement(pascalParser.WhileStatementContext ctx) { 
+        return visitChildren(ctx); 
+    }
+
+    @Override 
+    public T visitForStatement(pascalParser.ForStatementContext ctx) { 
+        return visitChildren(ctx); 
+    }
+
+    @Override 
+    public T visitVariable(pascalParser.VariableContext ctx) {
+          return visitChildren(ctx); 
+    }*/
+}

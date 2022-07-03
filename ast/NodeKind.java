@@ -17,11 +17,6 @@ public enum NodeKind {
             return "=";
         }
 	},
-    BLOCK_NODE {
-		public String toString() {
-            return "block";
-        }
-	},
     BOOL_VAL_NODE {
 		public String toString() {
             return "";
@@ -60,6 +55,26 @@ public enum NodeKind {
     PROGRAM_NODE {
 		public String toString() {
             return "program";
+        }
+	},
+    PROGRAM_HEADING_NODE {
+		public String toString() {
+            return "programHeading";
+        }
+	},
+    BLOCK_NODE {
+		public String toString() {
+            return "block";
+        }
+	},
+    IDENTIFIER_NODE {
+		public String toString() {
+            return "identifier";
+        }
+	},
+    IDENTIFIER_LIST_NODE {
+		public String toString() {
+            return "identifierList";
         }
 	},
     READ_NODE {
