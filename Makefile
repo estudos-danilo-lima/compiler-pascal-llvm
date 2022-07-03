@@ -20,7 +20,7 @@ all: antlr javac
 	@echo "Done."
 
 antlr: pascal.g4
-	$(ANTLR4) -o $(GEN_PATH) pascal.g4
+	$(ANTLR4) -no-listener -visitor -o $(GEN_PATH) pascal.g4
 
 javac:
 	$(JAVAC) $(CLASS_PATH_OPTION) $(GEN_PATH)/*.java
