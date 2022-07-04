@@ -1,4 +1,4 @@
-package checker;
+
 
 import java.io.IOException;
 
@@ -7,9 +7,8 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import lexer.pascalLexer;
-import lexer.pascalParser;
-
+import parser.pascalLexer;
+import parser.pascalParser;
 
 public class Main {
 

@@ -1,4 +1,4 @@
-package checker;
+
 
 import static ast.NodeKind.ASSIGN_NODE;
 import static ast.NodeKind.BLOCK_NODE;
@@ -28,6 +28,10 @@ import static typing.Type.REAL_TYPE;
 import static typing.Type.STR_TYPE;
 
 import ast.AST;
+import ast.NodeKind;
+import parser.pascalBaseVisitor;
+import parser.pascalParser;
+
 import org.antlr.v4.runtime.Token;
 import tables.StrTable;
 import tables.VarTable;
@@ -145,7 +149,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     public AST visitProgram(pascalParser.ProgramContext ctx) {
         AST programHeading = visit(ctx.programHeading());
         AST block          = visit(ctx.block());
-        this.root = AST.newSubtree(PROGRAM_NODE, NO_TYPE, programHeading, block);
+        this.root = AST.newSubtree(NodeKind.PROGRAM_NODE, NO_TYPE, programHeading, block);
         return this.root;
     }
 
@@ -154,20 +158,20 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         
         AST identifier = visit(ctx.identifier());
         
-        AST identifierList = AST.newSubtree(IDENTIFIER_LIST_NODE, NO_TYPE);
+        AST identifierList = AST.newSubtree(NodeKind.IDENTIFIER_LIST_NODE, NO_TYPE);
 
-        for (int i = 0; i <ctx.indentifierList().size(); i++){
-            AST child = visit(ctx.indentifierList(i));
+        for (int i = 0; i <ctx.identifierList().size(); i++){
+            AST child = visit(ctx.identifierList(i));
             identifierList.addChild(child);
         }
         
-        this.root = AST.newSubtree(PROGRAM_HEADING_NODE, NO_TYPE, identifier, identifierList);
+        this.root = AST.newSubtree(NodeKind.PROGRAM_HEADING_NODE, NO_TYPE, identifier, identifierList);
         return this.root; 
     }
 
     @Override
     public AST visitIdentifier(pascalParser.IdentifierContext ctx) {
-        this.root = AST.newSubtree(IDENTIFIER, NO_TYPE);
+        this.root = AST.newSubtree(NodeKind.IDENTIFIER_NODE, NO_TYPE);
         return newVar(ctx.IDENT().getSymbol());
         //return this.root; 
     }
