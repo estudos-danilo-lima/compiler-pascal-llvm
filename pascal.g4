@@ -37,6 +37,12 @@ grammar pascal;
 
 options { caseInsensitive = true; }
 
+@header {
+    package parser;
+    import java.util.HashMap;
+}
+
+
 program
    : programHeading (INTERFACE)? block DOT
    ;

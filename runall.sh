@@ -2,7 +2,7 @@
 
 YEAR=$(pwd | grep -o '20..-.')
 # Ajeite essa variável como feito no Makefile
-ROOT=/home/miguel/compiladores/compiler-pascal-llvm
+ROOT=$(shell pwd)
 DATA=$ROOT/tests
 IN=$DATA/in
 OUT=./out05

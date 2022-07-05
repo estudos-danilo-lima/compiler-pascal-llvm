@@ -4,11 +4,12 @@ JAVA=java
 JAVAC=javac
 
 # Eu uso ROOT como o diretório raiz para os meus labs.
-YEAR=$(shell pwd | grep -o '20..-.')
-ROOT=/home/miguel/compiladores/compiler-pascal-llvm
+ROOT=$(shell pwd)
 
 ANTLR_PATH=$(ROOT)/tools/antlr-4.10.1-complete.jar
-CLASS_PATH_OPTION=-cp .:$(ANTLR_PATH)
+PARSER_PATH=$(ROOT)/parser/*
+
+CLASS_PATH_OPTION=-cp .:$(ANTLR_PATH) # $(PARSER_PATH)
 
 # Comandos como descritos na página do ANTLR.
 ANTLR4=$(JAVA) -jar $(ANTLR_PATH)
@@ -31,10 +32,6 @@ OUT=./out05
 all: antlr javac
 	@echo "Done."
 
-# Como dito no README, o ANTLR provê duas funcionalidades para se caminhar
-# na parse tree: um listener e um visitor. Por padrão, o ANTLR gera um listener
-# mas não gera um visitor. Como a gente quer o contrário, temos de passar
-# as opções -no-listener -visitor.
 antlr: pascal.g4
 	$(ANTLR4) -no-listener -visitor -o $(GEN_PATH) pascal.g4
 
@@ -44,8 +41,20 @@ javac:
 	mkdir $(BIN_PATH)
 	$(JAVAC) $(CLASS_PATH_OPTION) -d $(BIN_PATH) */*.java
 
+
 run:
-	$(JAVA) $(CLASS_PATH_OPTION):$(BIN_PATH) $(MAIN_PATH)/Main $(FILE)
+	$(JAVA) $(CLASS_PATH_OPTION):$(BIN_PATH) $(MAIN_PATH)/Main.java $(FILE)
+
+runallparser:
+	-for FILE in $(DATA)/*.pas; do \
+		cd $(GEN_PATH) && \
+		$(GRUN) pascal program $${FILE} &&\
+		cd .. ; \
+	done;
+
+runparser:
+	cd $(GEN_PATH) && $(GRUN) pascal program -tokens $(FILE)
+
 
 clean:
 	@rm -rf $(GEN_PATH) $(BIN_PATH) $(OUT)
