@@ -1,4 +1,4 @@
-
+package checker;
 
 import java.io.IOException;
 
@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import parser.pascalLexer;
 import parser.pascalParser;
+import checker.SemanticChecker;
 
 public class Main {
 

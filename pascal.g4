@@ -158,8 +158,10 @@ subrangeType
    ;
 
 typeIdentifier
-   : identifier
-   | (CHAR | BOOLEAN | INTEGER | REAL | STRING)
+   : BOOLEAN # boolType
+   | INTEGER # intType
+   | REAL # realType
+   | STRING # stringType
    ;
 
 structuredType

@@ -1,4 +1,4 @@
-
+package checker;
 
 import static ast.NodeKind.ASSIGN_NODE;
 import static ast.NodeKind.BLOCK_NODE;
@@ -71,7 +71,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 	private StrTable st = new StrTable();   // Tabela de strings.
     private VarTable vt = new VarTable();   // Tabela de variáveis.
 
-    Type lastDeclType;  // Variável "global" com o último tipo declarado.
+    Type lastDeclType = NO_TYPE;  // Variável "global" com o último tipo declarado.
 
     AST root; // Nó raiz da AST sendo construída.
 
@@ -155,63 +155,82 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
     @Override
     public AST visitProgramHeading(pascalParser.ProgramHeadingContext ctx) {
-        
-        AST identifier = visit(ctx.identifier());
-        
-        AST identifierList = AST.newSubtree(NodeKind.IDENTIFIER_LIST_NODE, NO_TYPE);
+        AST node = AST.newSubtree(NodeKind.PROGRAM_HEADING_NODE, NO_TYPE);
 
-        for (int i = 0; i <ctx.identifierList().size(); i++){
-            AST child = visit(ctx.identifierList(i));
-            identifierList.addChild(child);
-        }
+        AST identifier = visit(ctx.identifier());
+
+        node.addChild(identifier);
         
-        this.root = AST.newSubtree(NodeKind.PROGRAM_HEADING_NODE, NO_TYPE, identifier, identifierList);
-        return this.root; 
+        if(ctx.identifierList() != null){
+            AST identifierList = visit(ctx.identifierList());
+
+            node.addChild(identifierList);
+        }
+        return node;
     }
 
     @Override
     public AST visitIdentifier(pascalParser.IdentifierContext ctx) {
-        this.root = AST.newSubtree(NodeKind.IDENTIFIER_NODE, NO_TYPE);
-        return newVar(ctx.IDENT().getSymbol());
-        //return this.root; 
+        AST node;
+        if (this.lastDeclType == NO_TYPE){
+            node = AST.newSubtree(NodeKind.IDENTIFIER_NODE, NO_TYPE);
+            return this.root; 
+        }
+        else{
+            node = newVar(ctx.IDENT().getSymbol());
+        }
+        return node;
     }
 	
 
+    @Override
+    public AST visitIdentifierList(pascalParser.IdentifierListContext ctx) {
+        AST node = AST.newSubtree(NodeKind.IDENTIFIER_LIST_NODE, NO_TYPE);
+        // Basta pegar o size do identifier pra saber quantos tem.
+        for (int i = 0; i < ctx.identifier().size(); i++) {
+            // Visita um por um, com o 0 sendo o primeiro (fora do fecho), e
+            // os demais dentro do fecho.
+            AST child = visit(ctx.identifier(i));
+            node.addChild(child);
+        }
+        // Aqui deveria retornar um nó da AST.
+        return node;
+    }
+
+
 	@Override 
-    public AST visitVariableDeclaration(pascalParser.VariableDeclarationContext ctx) { 
+    public AST visitVariableDeclaration(pascalParser.VariableDeclarationContext ctx) {
+        //Reset
+        this.lastDeclType = NO_TYPE;
         visit(ctx.type_());
         AST node = AST.newSubtree(VAR_LIST_NODE, NO_TYPE);
-    	for (int i = 0; i < ctx.identifierList().size(); i++) {
-    		AST child = visit(ctx.identifierList(i));
-            // Cria e retorna um nó para a variável.
-    		node.addChild(child);
-    	}
+        AST child = visit(ctx.identifierList());
+        // Cria e retorna um nó para a variável.
+        node.addChild(child);
     	return node;
     }
 
     @Override 
-    public AST visitBool_(pascalParser.Bool_Context ctx) { 
+    public AST visitBoolType(pascalParser.BoolTypeContext ctx) { 
         this.lastDeclType = Type.BOOL_TYPE;
     	return null;
     }
 
-    @Override 
-    public AST visitUnsignedInteger(pascalParser.UnsignedIntegerContext ctx) { 
+	@Override 
+    public AST visitIntType(pascalParser.IntTypeContext ctx) { 
         this.lastDeclType = Type.INT_TYPE;
     	return null;
     }
 
 	@Override 
-    public AST visitUnsignedReal(pascalParser.UnsignedRealContext ctx) { 
+    public AST visitRealType(pascalParser.RealTypeContext ctx) { 
         this.lastDeclType = Type.REAL_TYPE;
     	return null;
     }
 
-    @Override 
-    public AST visitString(pascalParser.StringContext ctx) { 
+	@Override public AST visitStringType(pascalParser.StringTypeContext ctx) {
         this.lastDeclType = Type.STR_TYPE;
-    	return null;
-    }
+    	return null; }
     /*
 	@Override 
     public AST visitProcedureAndFunctionDeclarationPart(pascalParser.ProcedureAndFunctionDeclarationPartContext ctx) { 

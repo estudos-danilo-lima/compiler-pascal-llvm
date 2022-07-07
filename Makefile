@@ -43,7 +43,7 @@ javac:
 
 
 run:
-	$(JAVA) $(CLASS_PATH_OPTION):$(BIN_PATH) $(MAIN_PATH)/Main.java $(FILE)
+	$(JAVA) $(CLASS_PATH_OPTION):$(BIN_PATH) $(MAIN_PATH)/Main $(FILE)
 
 runallparser:
 	-for FILE in $(DATA)/*.pas; do \
