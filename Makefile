@@ -9,7 +9,7 @@ ROOT=$(shell pwd)
 ANTLR_PATH=$(ROOT)/tools/antlr-4.10.1-complete.jar
 PARSER_PATH=$(ROOT)/parser/*
 
-CLASS_PATH_OPTION=-cp .:$(ANTLR_PATH) # $(PARSER_PATH)
+CLASS_PATH_OPTION=-cp .:$(ANTLR_PATH)# $(PARSER_PATH)
 
 # Comandos como descritos na página do ANTLR.
 ANTLR4=$(JAVA) -jar $(ANTLR_PATH)
@@ -41,7 +41,6 @@ javac:
 	mkdir $(BIN_PATH)
 	$(JAVAC) $(CLASS_PATH_OPTION) -d $(BIN_PATH) */*.java
 
-
 run:
 	$(JAVA) $(CLASS_PATH_OPTION):$(BIN_PATH) $(MAIN_PATH)/Main $(FILE)
 
@@ -54,7 +53,6 @@ runallparser:
 
 runparser:
 	cd $(GEN_PATH) && $(GRUN) pascal program -tokens $(FILE)
-
 
 clean:
 	@rm -rf $(GEN_PATH) $(BIN_PATH) $(OUT)

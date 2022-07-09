@@ -94,8 +94,8 @@ constant
    ;
 
 unsignedNumber
-   : unsignedInteger
-   | unsignedReal
+   : unsignedInteger # exprIntegerVal
+   | unsignedReal # exprRealVal
    ;
 
 unsignedInteger
@@ -112,8 +112,8 @@ sign
    ;
 
 bool_
-   : TRUE
-   | FALSE
+   : TRUE # exprTrue
+   | FALSE # exprFalse
    ;
 
 string
@@ -372,10 +372,10 @@ factor
    ;
 
 unsignedConstant
-   : unsignedNumber
-   | constantChr
-   | string
-   | NIL
+   : unsignedNumber # none
+   | constantChr #none
+   | string # exprStrVal
+   | NIL # none
    ;
 
 functionDesignator

@@ -17,7 +17,7 @@ import static ast.NodeKind.REPEAT_NODE;
 import static ast.NodeKind.STR_VAL_NODE;
 import static ast.NodeKind.TIMES_NODE;
 import static ast.NodeKind.VAR_DECL_NODE;
-import static ast.NodeKind.VAR_LIST_NODE;
+import static ast.NodeKind.VAR_DECL_PART_NODE;
 import static ast.NodeKind.VAR_USE_NODE;
 import static ast.NodeKind.WRITE_NODE;
 import static typing.Conv.I2R;
@@ -103,7 +103,26 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
             return null; // Never reached.
         }
         idx = vt.addVar(text, line, lastDeclType);
-        return new AST(VAR_DECL_NODE, idx, lastDeclType);
+        return new AST(NodeKind.VAR_DECL_NODE, idx, lastDeclType);
+    }
+
+    private static AST checkAssign(int lineNo, AST l, AST r) {
+    	Type lt = l.type;
+    	Type rt = r.type;
+
+        if (lt == BOOL_TYPE && rt != BOOL_TYPE) typeError(lineNo, ":=", lt, rt);
+        if (lt == STR_TYPE  && rt != STR_TYPE)  typeError(lineNo, ":=", lt, rt);
+        if (lt == INT_TYPE  && rt != INT_TYPE)  typeError(lineNo, ":=", lt, rt);
+
+        if (lt == REAL_TYPE) {
+        	if (rt == INT_TYPE) {
+        		r = Conv.createConvNode(I2R, r);
+        	} else if (rt != REAL_TYPE) {
+        		typeError(lineNo, ":=", lt, rt);
+            }
+        }
+
+        return AST.newSubtree(ASSIGN_NODE, NO_TYPE, l, r);
     }
 
     // ----------------------------------------------------------------------------
@@ -169,19 +188,46 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         return node;
     }
 
-    @Override
-    public AST visitIdentifier(pascalParser.IdentifierContext ctx) {
-        AST node;
-        if (this.lastDeclType == NO_TYPE){
-            node = AST.newSubtree(NodeKind.IDENTIFIER_NODE, NO_TYPE);
-            return this.root; 
+    @Override public AST visitBlock(pascalParser.BlockContext ctx) { 
+        AST node = AST.newSubtree(NodeKind.BLOCK_NODE, NO_TYPE);
+        //AST procedureAndFunctionDeclarationPart = AST.newSubtree(NodeKind.FUNC_LIST_NODE, NO_TYPE);
+        /*for(var funcList : ctx.procedureAndFunctionDeclarationPart()){
+            if (funcList.procedureOrFunctionDeclaration() != null){
+                procedureAndFunctionDeclarationPart.addChild(visit(funcList.procedureOrFunctionDeclaration()));
+            }
+        }*/
+
+        if (ctx.variableDeclarationPart().size() > 0){
+            node.addChild(visit(ctx.variableDeclarationPart(0)));
         }
-        else{
-            node = newVar(ctx.IDENT().getSymbol());
+
+        if (ctx.compoundStatement().statements().statement().size() > 1){
+            node.addChild(visit(ctx.compoundStatement().statements()));
+        }
+        
+        return node;
+    }
+
+    @Override public AST visitVariableDeclarationPart(pascalParser.VariableDeclarationPartContext ctx) { 
+        AST node = AST.newSubtree(NodeKind.VAR_DECL_PART_NODE, NO_TYPE);
+        for (int i = 0; i < ctx.variableDeclaration().size(); i++) {
+            // Visita um por um, com o 0 sendo o primeiro (fora do fecho), e
+            // os demais dentro do fecho.
+            node.addChild(visit(ctx.variableDeclaration(i)));
         }
         return node;
     }
-	
+    
+	@Override 
+    public AST visitVariableDeclaration(pascalParser.VariableDeclarationContext ctx) {
+        //Reset
+        this.lastDeclType = NO_TYPE;
+        visit(ctx.type_());
+
+        AST node = visit(ctx.identifierList());
+
+    	return node;
+    }
 
     @Override
     public AST visitIdentifierList(pascalParser.IdentifierListContext ctx) {
@@ -197,17 +243,16 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         return node;
     }
 
-
-	@Override 
-    public AST visitVariableDeclaration(pascalParser.VariableDeclarationContext ctx) {
-        //Reset
-        this.lastDeclType = NO_TYPE;
-        visit(ctx.type_());
-        AST node = AST.newSubtree(VAR_LIST_NODE, NO_TYPE);
-        AST child = visit(ctx.identifierList());
-        // Cria e retorna um nó para a variável.
-        node.addChild(child);
-    	return node;
+    @Override
+    public AST visitIdentifier(pascalParser.IdentifierContext ctx) {
+        AST node;
+        if (this.lastDeclType == NO_TYPE){
+            node = AST.newSubtree(NodeKind.IDENTIFIER_NODE, NO_TYPE);
+        }
+        else{
+            node = newVar(ctx.IDENT().getSymbol());
+        }
+        return node;
     }
 
     @Override 
@@ -230,20 +275,107 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
 	@Override public AST visitStringType(pascalParser.StringTypeContext ctx) {
         this.lastDeclType = Type.STR_TYPE;
-    	return null; }
+    	return null; 
+    }
+
+    @Override public AST visitStatements(pascalParser.StatementsContext ctx) {
+        AST node = AST.newSubtree(NodeKind.STATEMENT_LIST_NODE, NO_TYPE);
+
+        for (int i = 0; i < ctx.statement().size()-1; i++) {
+            // Visita um por um, com o 0 sendo o primeiro (fora do fecho), e
+            // os demais dentro do fecho.
+            AST child = visit(ctx.statement(i));
+            node.addChild(child);
+        }
+
+        return node;
+    }
+
+    @Override public AST visitStatement(pascalParser.StatementContext ctx) {
+        AST node = AST.newSubtree(NodeKind.STATEMENT_NODE, NO_TYPE);
+        
+        node.addChild(visit(ctx.unlabelledStatement()));
+
+        return node;
+    }
+
+    @Override public AST visitUnlabelledStatement(pascalParser.UnlabelledStatementContext ctx) {
+        return visitChildren(ctx.simpleStatement());
+    }
+
+    @Override public AST visitSimpleStatement(pascalParser.SimpleStatementContext ctx) {
+        return visitChildren(ctx.assignmentStatement());
+    }
+
+    @Override 
+    public AST visitAssignmentStatement(pascalParser.AssignmentStatementContext ctx) { 
+        // Visita a expressão da direita.
+		AST exprNode = visit(ctx.expression());
+		// Visita o identificador da esquerda.
+		Token idToken = ctx.variable().identifier(0).IDENT().getSymbol();
+		AST idNode = checkVar(idToken);
+		// Faz as verificações de tipos.
+		return checkAssign(idToken.getLine(), idNode, exprNode);
+    }
+
+    @Override public AST visitExpression(pascalParser.ExpressionContext ctx) {
+        return visit(ctx.simpleExpression());
+    }
+
+    @Override public AST visitSimpleExpression(pascalParser.SimpleExpressionContext ctx) {
+        return visitTerm(ctx.term());
+    }
+
+    @Override public AST visitTerm(pascalParser.TermContext ctx) {
+        return visitSignedFactor(ctx.signedFactor());
+    }
+
+    @Override public AST visitSignedFactor(pascalParser.SignedFactorContext ctx) {
+        AST exprNode = visit(ctx.factor());
+
+        // Check ctx.MINUS != NULL
+
+        return exprNode;
+    }
+
+    @Override public AST visitFactor(pascalParser.FactorContext ctx) {
+        if (ctx.variable() != null) {
+            return visit(ctx.variable());
+        }
+
+        return super.visitFactor(ctx);
+    }
+
+    @Override public AST visitVariable(pascalParser.VariableContext ctx) {
+        return checkVar(ctx.identifier(0).IDENT().getSymbol());
+    }
+
+    @Override public AST visitExprIntegerVal(pascalParser.ExprIntegerValContext ctx) {
+        int intData = Integer.parseInt(ctx.getText());
+		return new AST(INT_VAL_NODE, intData, INT_TYPE);
+    }
+
+	@Override public AST visitExprRealVal(pascalParser.ExprRealValContext ctx) {
+        float floatData = Float.parseFloat(ctx.getText());
+		return new AST(REAL_VAL_NODE, floatData, REAL_TYPE);
+    }
+
+    @Override public AST visitExprTrue(pascalParser.ExprTrueContext ctx) {
+        return new AST(BOOL_VAL_NODE, 1, BOOL_TYPE);
+    }
+
+	@Override public AST visitExprFalse(pascalParser.ExprFalseContext ctx) {
+        return new AST(BOOL_VAL_NODE, 0, BOOL_TYPE);
+    }
+
+    @Override public AST visitExprStrVal(pascalParser.ExprStrValContext ctx) {
+        int idx = st.addStr(ctx.string().getText());
+		// Campo 'data' do nó da AST guarda o índice na tabela.
+		return new AST(STR_VAL_NODE, idx, STR_TYPE);
+    }
     /*
 	@Override 
     public AST visitProcedureAndFunctionDeclarationPart(pascalParser.ProcedureAndFunctionDeclarationPartContext ctx) { 
-        return visitChildren(ctx); 
-    }
-
-	@Override 
-    public AST visitProcedureOrFunctionDeclaration(pascalParser.ProcedureOrFunctionDeclarationContext ctx) {
-        return visitChildren(ctx); 
-    }
-
-	@Override 
-    public AST visitProcedureDeclaration(pascalParser.ProcedureDeclarationContext ctx) {
         return visitChildren(ctx); 
     }
 
@@ -262,10 +394,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         return visitChildren(ctx); 
     }
 
-    @Override 
-    public T visitAssignmentStatement(pascalParser.AssignmentStatementContext ctx) { 
-        return visitChildren(ctx); 
-    }
+    
 
     @Override 
     public T visitIfStatement(pascalParser.IfStatementContext ctx) { 

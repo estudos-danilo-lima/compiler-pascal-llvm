@@ -67,6 +67,21 @@ public enum NodeKind {
             return "block";
         }
 	},
+    PROC_FUNCT_DECL_PART_NODE {
+		public String toString() {
+            return "procedureAndFunctionDeclarationPart";
+        }
+	},
+    PROC_FUNCT_DECL_NODE {
+		public String toString() {
+            return "procedureOrFunctionDeclaration";
+        }
+	},
+    FUNC_DECL_NODE {
+		public String toString() {
+            return "functionDeclaration";
+        }
+	},
     IDENTIFIER_NODE {
 		public String toString() {
             return "identifier";
@@ -75,6 +90,16 @@ public enum NodeKind {
     IDENTIFIER_LIST_NODE {
 		public String toString() {
             return "identifierList";
+        }
+	},
+    STATEMENT_LIST_NODE {
+		public String toString() {
+            return "statements";
+        }
+	},
+    STATEMENT_NODE {
+		public String toString() {
+            return "statement";
         }
 	},
     READ_NODE {
@@ -104,12 +129,12 @@ public enum NodeKind {
 	},
     VAR_DECL_NODE {
 		public String toString() {
-            return "var_decl";
+            return "variableDeclaration";
         }
 	},
-    VAR_LIST_NODE {
+    VAR_DECL_PART_NODE {
 		public String toString() {
-            return "var_list";
+            return "variableDeclarationPart";
         }
 	},
     VAR_USE_NODE {
@@ -161,7 +186,7 @@ public enum NodeKind {
 	        case REAL_VAL_NODE:
 	        case STR_VAL_NODE:
 	        case VAR_DECL_NODE:
-	        case VAR_USE_NODE:
+	        case VAR_USE_NODE: 
 	            return true;
 	        default:
 	            return false;
