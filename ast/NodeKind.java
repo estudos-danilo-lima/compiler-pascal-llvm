@@ -147,6 +147,11 @@ public enum NodeKind {
             return "while";
         }
 	},
+    REPEAT_NODE {
+		public String toString() {
+            return "repeat";
+        }
+	},
     STR_VAL_NODE {
 		public String toString() {
             return "";

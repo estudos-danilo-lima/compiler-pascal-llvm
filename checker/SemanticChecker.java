@@ -311,14 +311,31 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
     
     @Override public AST visitUnlabelledStatement(pascalParser.UnlabelledStatementContext ctx) {
-        if (ctx.structuredStatement() != null && ctx.structuredStatement().conditionalStatement() != null)
-            return visitChildren(ctx.structuredStatement());
+        if (ctx.structuredStatement() != null)
+            return visit(ctx.structuredStatement());
         else
-            return visitChildren(ctx.simpleStatement());
+            return visit(ctx.simpleStatement());
     }
     
+    @Override public AST visitStructuredStatement(pascalParser.StructuredStatementContext ctx) {
+        if(ctx.compoundStatement() != null){
+            return visit(ctx.compoundStatement());
+        }
+        else if(ctx.conditionalStatement() != null){
+            return visit(ctx.conditionalStatement());
+        }
+        else if(ctx.repetetiveStatement() != null){
+            return visit(ctx.repetetiveStatement());
+        }
+        return null;
+    }
+
+    @Override public AST visitCompoundStatement(pascalParser.CompoundStatementContext ctx) {
+        return visit(ctx.statements());
+    }
+
     @Override public AST visitSimpleStatement(pascalParser.SimpleStatementContext ctx) {
-        return visitChildren(ctx.assignmentStatement());
+        return visit(ctx.assignmentStatement());
     }
 
     @Override 
@@ -500,7 +517,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         // Analisa a expressão booleana.
         AST exprNode = visit(ctx.expression());
         AST thenNode = AST.newSubtree(NodeKind.STATEMENT_NODE, NO_TYPE); 
-        thenNode.addChild(visitUnlabelledStatement(ctx.statement(0).unlabelledStatement()));
+        thenNode.addChild(visit(ctx.statement(0).unlabelledStatement()));
 
         checkBoolExpr(ctx.IF().getSymbol().getLine(), "if", exprNode.type);
 
@@ -516,18 +533,16 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
             return AST.newSubtree(IF_NODE, NO_TYPE, exprNode, thenNode, elseNode);
         }
     }
-/*
-    @Override 
-    public AST visitWhileStatement(pascalParser.WhileStatementContext ctx) { 
+
+    @Override public AST visitRepeatStatement(pascalParser.RepeatStatementContext ctx) {
         // Analisa a expressão booleana.
-		AST exprNode = visit(ctx.expression());
-		checkBoolExpr(ctx.WHILE().getSymbol().getLine(), "while", exprNode.type);
+
+        AST exprNode = visit(ctx.expression());
+        checkBoolExpr(ctx.UNTIL().getSymbol().getLine(), "repeat", exprNode.type);
 
         // Constrói o bloco de código do loop.
-		AST blockNode = AST.newSubtree(BLOCK_NODE, NO_TYPE);
-        blockNode.addChild(visit(ctx.statement()));
+        AST statementsNode = visit(ctx.statements());
 
-    	return AST.newSubtree(WHILE_NODE, NO_TYPE, exprNode, blockNode);
+        return AST.newSubtree(NodeKind.REPEAT_NODE, NO_TYPE, exprNode, statementsNode);
     }
-*/
 }
