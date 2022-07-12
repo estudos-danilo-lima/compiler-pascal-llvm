@@ -5,5 +5,7 @@ var
 begin
     num := 1 + 2;
     if num > 2 then
-        nome := 'Hi';
+        nome := 'Hi'
+    else
+        cont := 5;
 end.

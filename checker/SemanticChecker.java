@@ -283,6 +283,20 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     	return null;
     }
 
+    @Override public AST visitArrayType(pascalParser.ArrayTypeContext ctx) {
+
+        visit(ctx.componentType().type_());
+
+        return visit(ctx.typeList().indexType(0).simpleType().subrangeType());
+    }
+
+    @Override public AST visitSubrangeType(pascalParser.SubrangeTypeContext ctx) {
+        AST left = visit(ctx.constant(0).unsignedNumber());
+        AST right = visit(ctx.constant(1).unsignedNumber());
+
+        return AST.newSubtree(NodeKind.SUBRANGE_NODE, NO_TYPE, left, right);
+    }
+
 	@Override public AST visitStringType(pascalParser.StringTypeContext ctx) {
         this.lastDeclType = Type.STR_TYPE;
     	return null; 
@@ -484,6 +498,9 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         return super.visitFactor(ctx);
     }
 
+// Fazer visitVariable aceitar vetor tambem;
+// (AT identifier | identifier) (LBRACK expression (COMMA expression)* RBRACK
+
     @Override public AST visitVariable(pascalParser.VariableContext ctx) {
         return checkVar(ctx.identifier(0).IDENT().getSymbol());
     }
@@ -523,12 +540,11 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
         // Constrói o bloco da condicional.
         if (ctx.ELSE() == null) {
-            System.out.println("ctx.else == "+ctx.ELSE());
             return AST.newSubtree(IF_NODE, NO_TYPE, exprNode, thenNode);
         } 
         else {
             AST elseNode = AST.newSubtree(ELSE_NODE, NO_TYPE); 
-            thenNode.addChild(visitUnlabelledStatement(ctx.statement(1).unlabelledStatement()));
+            elseNode.addChild(visitUnlabelledStatement(ctx.statement(1).unlabelledStatement()));
 
             return AST.newSubtree(IF_NODE, NO_TYPE, exprNode, thenNode, elseNode);
         }

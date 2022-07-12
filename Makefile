@@ -27,7 +27,7 @@ BIN_PATH=bin
 # Diretório para os casos de teste
 DATA=$(ROOT)/tests
 IN=$(DATA)/in
-OUT=./out05
+OUT=./tests/out
 
 all: antlr javac
 	@echo "Done."

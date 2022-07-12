@@ -182,6 +182,11 @@ public enum NodeKind {
             return "variableDeclarationPart";
         }
 	},
+    SUBRANGE_NODE {
+		public String toString() {
+            return "subRange";
+        }
+	},
     VAR_USE_NODE {
 		public String toString() {
             return "var_use";
