@@ -326,13 +326,7 @@ expression
    ;
 
 relationaloperator
-   : EQUAL
-   | NOT_EQUAL
-   | LT
-   | LE
-   | GE
-   | GT
-   | IN
+   : operator= (EQUAL | NOT_EQUAL | LT | LE | GE | GT | IN)
    ;
 
 simpleExpression
@@ -340,9 +334,7 @@ simpleExpression
    ;
 
 additiveoperator
-   : PLUS
-   | MINUS
-   | OR
+   : operator= (PLUS | MINUS | OR)
    ;
 
 term
@@ -350,11 +342,7 @@ term
    ;
 
 multiplicativeoperator
-   : STAR
-   | SLASH
-   | DIV
-   | MOD
-   | AND
+   : operator= (STAR | SLASH | DIV | MOD | AND)
    ;
 
 signedFactor

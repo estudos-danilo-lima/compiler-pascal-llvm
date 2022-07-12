@@ -4,22 +4,29 @@ import static ast.NodeKind.ASSIGN_NODE;
 import static ast.NodeKind.BLOCK_NODE;
 import static ast.NodeKind.BOOL_VAL_NODE;
 import static ast.NodeKind.EQ_NODE;
+import static ast.NodeKind.NOT_EQ_NODE;
 import static ast.NodeKind.IF_NODE;
+import static ast.NodeKind.ELSE_NODE;
 import static ast.NodeKind.INT_VAL_NODE;
 import static ast.NodeKind.LT_NODE;
+import static ast.NodeKind.LE_NODE;
+import static ast.NodeKind.GT_NODE;
+import static ast.NodeKind.GE_NODE;
 import static ast.NodeKind.MINUS_NODE;
 import static ast.NodeKind.OVER_NODE;
 import static ast.NodeKind.PLUS_NODE;
 import static ast.NodeKind.PROGRAM_NODE;
 import static ast.NodeKind.READ_NODE;
 import static ast.NodeKind.REAL_VAL_NODE;
-import static ast.NodeKind.REPEAT_NODE;
+import static ast.NodeKind.WHILE_NODE;
 import static ast.NodeKind.STR_VAL_NODE;
 import static ast.NodeKind.TIMES_NODE;
 import static ast.NodeKind.VAR_DECL_NODE;
 import static ast.NodeKind.VAR_DECL_PART_NODE;
 import static ast.NodeKind.VAR_USE_NODE;
 import static ast.NodeKind.WRITE_NODE;
+import static ast.NodeKind.AND_NODE;
+import static ast.NodeKind.OR_NODE;
 import static typing.Conv.I2R;
 import static typing.Type.BOOL_TYPE;
 import static typing.Type.INT_TYPE;
@@ -31,8 +38,11 @@ import ast.AST;
 import ast.NodeKind;
 import parser.pascalBaseVisitor;
 import parser.pascalParser;
+import parser.pascalParser.SimpleExpressionContext;
 
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
+
 import tables.StrTable;
 import tables.VarTable;
 
@@ -299,10 +309,14 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         return node;
     }
 
+    
     @Override public AST visitUnlabelledStatement(pascalParser.UnlabelledStatementContext ctx) {
-        return visitChildren(ctx.simpleStatement());
+        if (ctx.structuredStatement() != null && ctx.structuredStatement().conditionalStatement() != null)
+            return visitChildren(ctx.structuredStatement());
+        else
+            return visitChildren(ctx.simpleStatement());
     }
-
+    
     @Override public AST visitSimpleStatement(pascalParser.SimpleStatementContext ctx) {
         return visitChildren(ctx.assignmentStatement());
     }
@@ -319,21 +333,128 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     }
 
     @Override public AST visitExpression(pascalParser.ExpressionContext ctx) {
+        if (ctx.relationaloperator() != null){
+            AST simpleExpression = visit(ctx.simpleExpression());
+            AST Expression = visit(ctx.expression());
+            Unif unif = simpleExpression.type.unifyComp(Expression.type);
+
+            if (unif.type == NO_TYPE) {
+                typeError(
+                    ctx.relationaloperator().operator.getLine(),
+                    ctx.relationaloperator().operator.getText().toLowerCase(),
+                    simpleExpression.type, Expression.type);
+            }
+
+            simpleExpression = Conv.createConvNode(unif.lc, simpleExpression);
+            Expression = Conv.createConvNode(unif.rc, Expression);
+
+            if (ctx.relationaloperator().operator.getType() == pascalParser.EQUAL)
+                return AST.newSubtree(EQ_NODE, unif.type, simpleExpression, Expression);
+            else if(ctx.relationaloperator().operator.getType() == pascalParser.NOT_EQUAL)
+                return AST.newSubtree(NOT_EQ_NODE, unif.type, simpleExpression, Expression);
+            else if(ctx.relationaloperator().operator.getType() == pascalParser.LT)
+                return AST.newSubtree(LT_NODE, unif.type, simpleExpression, Expression);
+            else if(ctx.relationaloperator().operator.getType() == pascalParser.LE)
+                return AST.newSubtree(LE_NODE, unif.type, simpleExpression, Expression);
+            else if(ctx.relationaloperator().operator.getType() == pascalParser.GT)
+                return AST.newSubtree(GT_NODE, unif.type, simpleExpression, Expression);
+            else if(ctx.relationaloperator().operator.getType() == pascalParser.GE)
+                return AST.newSubtree(GE_NODE, unif.type, simpleExpression, Expression);
+        }
+        
         return visit(ctx.simpleExpression());
     }
 
     @Override public AST visitSimpleExpression(pascalParser.SimpleExpressionContext ctx) {
+        if (ctx.additiveoperator() != null){
+            AST term = visit(ctx.term());
+            AST simpleExpression = visit(ctx.simpleExpression());
+            Unif unif = null;
+
+            if(ctx.additiveoperator().operator.getType() == pascalParser.PLUS){
+                unif = term.type.unifyPlus(term.type);
+            }
+            else if(ctx.additiveoperator().operator.getType() == pascalParser.OR){
+                unif = term.type.unifyComp(term.type);
+            }
+            else if(ctx.additiveoperator().operator.getType() == pascalParser.MINUS){
+                unif = term.type.unifyOtherArith(term.type);
+            }
+
+            if (unif.type == NO_TYPE) {
+                typeError(
+                    ctx.additiveoperator().operator.getLine(),
+                    ctx.additiveoperator().operator.getText().toLowerCase(),
+                    term.type, simpleExpression.type);
+            }
+
+            term = Conv.createConvNode(unif.lc, term);
+            simpleExpression = Conv.createConvNode(unif.rc, simpleExpression);
+
+            if (ctx.additiveoperator().operator.getType() == pascalParser.PLUS)
+                return AST.newSubtree(PLUS_NODE, unif.type, term, simpleExpression);
+            else if(ctx.additiveoperator().operator.getType() == pascalParser.MINUS)
+                return AST.newSubtree(MINUS_NODE, unif.type, term, simpleExpression);
+            else if(ctx.additiveoperator().operator.getType() == pascalParser.OR)
+                return AST.newSubtree(OR_NODE, unif.type, term, simpleExpression);
+        }
+        
         return visitTerm(ctx.term());
     }
 
     @Override public AST visitTerm(pascalParser.TermContext ctx) {
+        if (ctx.multiplicativeoperator() != null){
+            AST signedFactor = visit(ctx.signedFactor());
+            AST term = visit(ctx.term());
+            Unif unif = null;
+
+            if(ctx.multiplicativeoperator().operator.getType() == pascalParser.STAR){
+                unif = signedFactor.type.unifyPlus(term.type);
+            }
+            else if(ctx.multiplicativeoperator().operator.getType() == pascalParser.SLASH){
+                unif = signedFactor.type.unifyPlus(term.type);
+            }
+            else if(ctx.multiplicativeoperator().operator.getType() == pascalParser.DIV){
+                unif = signedFactor.type.unifyPlus(term.type);
+            }
+            else if(ctx.multiplicativeoperator().operator.getType() == pascalParser.AND){
+                unif = signedFactor.type.unifyComp(term.type);
+            }
+
+            if (unif.type == NO_TYPE) {
+                typeError(
+                    ctx.multiplicativeoperator().operator.getLine(),
+                    ctx.multiplicativeoperator().operator.getText().toLowerCase(),
+                    signedFactor.type, term.type);
+            }
+
+            signedFactor = Conv.createConvNode(unif.lc, signedFactor);
+            term = Conv.createConvNode(unif.rc, term);
+
+            if (ctx.multiplicativeoperator().operator.getType() == pascalParser.STAR)
+                return AST.newSubtree(TIMES_NODE, unif.type, signedFactor, term);
+            else if(ctx.multiplicativeoperator().operator.getType() == pascalParser.SLASH)
+                return AST.newSubtree(OVER_NODE, unif.type, signedFactor, term);
+            else if(ctx.multiplicativeoperator().operator.getType() == pascalParser.DIV)
+                return AST.newSubtree(OVER_NODE, unif.type, signedFactor, term);
+            else if(ctx.multiplicativeoperator().operator.getType() == pascalParser.AND)
+                return AST.newSubtree(AND_NODE, unif.type, signedFactor, term);
+        }
+        
         return visitSignedFactor(ctx.signedFactor());
     }
 
     @Override public AST visitSignedFactor(pascalParser.SignedFactorContext ctx) {
         AST exprNode = visit(ctx.factor());
 
-        // Check ctx.MINUS != NULL
+        if(ctx.MINUS() != null){
+            if (exprNode.type == Type.REAL_TYPE){
+                return new AST(exprNode.kind, exprNode.floatData*(-1), Type.REAL_TYPE);
+            }
+            else{
+                return new AST(exprNode.kind, exprNode.intData*(-1), Type.INT_TYPE);
+            }
+        }
 
         return exprNode;
     }
@@ -373,46 +494,40 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 		// Campo 'data' do nó da AST guarda o índice na tabela.
 		return new AST(STR_VAL_NODE, idx, STR_TYPE);
     }
-    /*
-	@Override 
-    public AST visitProcedureAndFunctionDeclarationPart(pascalParser.ProcedureAndFunctionDeclarationPartContext ctx) { 
-        return visitChildren(ctx); 
-    }
 
-    @Override 
-    public T visitMultiplicativeoperator(pascalParser.MultiplicativeoperatorContext ctx) { 
-        return visitChildren(ctx); 
-    }
-    
-    @Override 
-    public T visitAdditiveoperator(pascalParser.AdditiveoperatorContext ctx) { 
-        return visitChildren(ctx); 
-    }
+    @Override
+    public AST visitIfStatement(pascalParser.IfStatementContext ctx) {
+        // Analisa a expressão booleana.
+        AST exprNode = visit(ctx.expression());
+        AST thenNode = AST.newSubtree(NodeKind.STATEMENT_NODE, NO_TYPE); 
+        thenNode.addChild(visitUnlabelledStatement(ctx.statement(0).unlabelledStatement()));
 
-    @Override 
-    public T visitRelationaloperator(pascalParser.RelationaloperatorContext ctx) { 
-        return visitChildren(ctx); 
+        checkBoolExpr(ctx.IF().getSymbol().getLine(), "if", exprNode.type);
+
+        // Constrói o bloco da condicional.
+        if (ctx.ELSE() == null) {
+            System.out.println("ctx.else == "+ctx.ELSE());
+            return AST.newSubtree(IF_NODE, NO_TYPE, exprNode, thenNode);
+        } 
+        else {
+            AST elseNode = AST.newSubtree(ELSE_NODE, NO_TYPE); 
+            thenNode.addChild(visitUnlabelledStatement(ctx.statement(1).unlabelledStatement()));
+
+            return AST.newSubtree(IF_NODE, NO_TYPE, exprNode, thenNode, elseNode);
+        }
     }
-
-    
-
+/*
     @Override 
-    public T visitIfStatement(pascalParser.IfStatementContext ctx) { 
-        return visitChildren(ctx); 
+    public AST visitWhileStatement(pascalParser.WhileStatementContext ctx) { 
+        // Analisa a expressão booleana.
+		AST exprNode = visit(ctx.expression());
+		checkBoolExpr(ctx.WHILE().getSymbol().getLine(), "while", exprNode.type);
+
+        // Constrói o bloco de código do loop.
+		AST blockNode = AST.newSubtree(BLOCK_NODE, NO_TYPE);
+        blockNode.addChild(visit(ctx.statement()));
+
+    	return AST.newSubtree(WHILE_NODE, NO_TYPE, exprNode, blockNode);
     }
-
-    @Override 
-    public T visitWhileStatement(pascalParser.WhileStatementContext ctx) { 
-        return visitChildren(ctx); 
-    }
-
-    @Override 
-    public T visitForStatement(pascalParser.ForStatementContext ctx) { 
-        return visitChildren(ctx); 
-    }
-
-    @Override 
-    public T visitVariable(pascalParser.VariableContext ctx) {
-          return visitChildren(ctx); 
-    }*/
+*/
 }

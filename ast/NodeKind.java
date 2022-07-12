@@ -17,6 +17,11 @@ public enum NodeKind {
             return "=";
         }
 	},
+    NOT_EQ_NODE {
+        public String toString() {
+            return "<>";
+        }
+    },
     BOOL_VAL_NODE {
 		public String toString() {
             return "";
@@ -27,6 +32,11 @@ public enum NodeKind {
             return "if";
         }
 	},
+    ELSE_NODE {
+		public String toString() {
+            return "else";
+        }
+	},
     INT_VAL_NODE {
 		public String toString() {
             return "";
@@ -35,6 +45,21 @@ public enum NodeKind {
     LT_NODE {
 		public String toString() {
             return "<";
+        }
+	},
+    LE_NODE {
+		public String toString() {
+            return "<=";
+        }
+	},
+    GT_NODE {
+		public String toString() {
+            return ">";
+        }
+	},
+    GE_NODE {
+		public String toString() {
+            return ">=";
         }
 	},
     MINUS_NODE {
@@ -102,6 +127,11 @@ public enum NodeKind {
             return "statement";
         }
 	},
+    EXPRESSION_NODE {
+		public String toString() {
+            return "expresion";
+        }
+	},
     READ_NODE {
 		public String toString() {
             return "read";
@@ -112,9 +142,9 @@ public enum NodeKind {
             return "";
         }
 	},
-    REPEAT_NODE {
+    WHILE_NODE {
 		public String toString() {
-            return "repeat";
+            return "while";
         }
 	},
     STR_VAL_NODE {
@@ -127,6 +157,16 @@ public enum NodeKind {
             return "*";
         }
 	},
+    AND_NODE {
+        public String toString() {
+            return "AND";
+        }
+    },
+    OR_NODE {
+        public String toString() {
+            return "OR";
+        }
+    },
     VAR_DECL_NODE {
 		public String toString() {
             return "variableDeclaration";

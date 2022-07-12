@@ -3,7 +3,8 @@ var
  nome:string;
  num,cont:integer;
 begin
-    nome := 'Hello';
     num := 1 + 2;
+    if num > 2 then
+        nome := 'Hello';
     cont := 3;
 end.
