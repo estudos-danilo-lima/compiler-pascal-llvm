@@ -44,8 +44,10 @@ import parser.pascalParser.SimpleExpressionContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import tables.ArrayTable;
 import tables.StrTable;
 import tables.VarTable;
+import tables.Range;
 
 import typing.Conv;
 import typing.Conv.Unif;
@@ -81,8 +83,11 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
 	private StrTable st = new StrTable();   // Tabela de strings.
     private VarTable vt = new VarTable();   // Tabela de variáveis.
+    private ArrayTable at = new ArrayTable(); //Tabela de arrays
 
     Type lastDeclType = NO_TYPE;  // Variável "global" com o último tipo declarado.
+    Boolean isArray = false;
+    Range lastDeclRange;
 
     AST root; // Nó raiz da AST sendo construída.
 
@@ -114,6 +119,9 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
             return null; // Never reached.
         }
         idx = vt.addVar(text, line, lastDeclType);
+        if (isArray){
+            at.addArray(text, line, lastDeclType,lastDeclRange);
+        }
         return new AST(NodeKind.VAR_DECL_NODE, idx, lastDeclType);
     }
 
@@ -161,6 +169,8 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         System.out.print(st);
         System.out.print("\n\n");
     	System.out.print(vt);
+    	System.out.print("\n\n");
+        System.out.print(at);
     	System.out.print("\n\n");
     }
 
@@ -285,6 +295,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     public AST visitVariableDeclaration(pascalParser.VariableDeclarationContext ctx) {
         //Reset
         this.lastDeclType = NO_TYPE;
+        isArray = false;
         AST type = visit(ctx.type_());
 
         AST node = visit(ctx.identifierList());
@@ -342,6 +353,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     }
 
     @Override public AST visitArrayType(pascalParser.ArrayTypeContext ctx) {
+        isArray = true;
 
         visit(ctx.componentType().type_());
 
@@ -352,6 +364,12 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         AST left = visit(ctx.constant(0).unsignedNumber());
         AST right = visit(ctx.constant(1).unsignedNumber());
 
+        int lastLowerLimit = 0,lastUpperLimit = 0;
+        lastLowerLimit =  Integer.parseInt(ctx.constant(0).getText().toLowerCase());
+        if(ctx.constant(1) != null){
+            lastUpperLimit =  Integer.parseInt(ctx.constant(1).getText().toLowerCase());
+        }
+        this.lastDeclRange = new Range(lastLowerLimit, lastUpperLimit);
         return AST.newSubtree(NodeKind.SUBRANGE_NODE, NO_TYPE, left, right);
     }
 
