@@ -4,7 +4,7 @@
 ROOT=$(pwd)
 DATA=$ROOT/tests
 IN=$DATA/in
-OUT=./out05
+OUT=./tests/out
 
 ANTLR_PATH=$ROOT/tools/antlr-4.10.1-complete.jar
 CLASS_PATH_OPTION="-cp .:$ANTLR_PATH"

@@ -92,6 +92,16 @@ public enum NodeKind {
             return "block";
         }
 	},
+    FUNCTION_NODE {
+		public String toString() {
+            return "function";
+        }
+	},
+    FUNCTION_DESIGN_NODE {
+		public String toString() {
+            return "function designator";
+        }
+	},
     PROC_FUNCT_DECL_PART_NODE {
 		public String toString() {
             return "procedureAndFunctionDeclarationPart";
@@ -115,6 +125,11 @@ public enum NodeKind {
     IDENTIFIER_LIST_NODE {
 		public String toString() {
             return "identifierList";
+        }
+	},
+    PARAMETER_LIST_NODE {
+		public String toString() {
+            return "parameterList";
         }
 	},
     STATEMENT_LIST_NODE {

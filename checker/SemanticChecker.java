@@ -33,6 +33,7 @@ import static typing.Type.INT_TYPE;
 import static typing.Type.NO_TYPE;
 import static typing.Type.REAL_TYPE;
 import static typing.Type.STR_TYPE;
+import static typing.Type.ARRAY_TYPE;
 
 import ast.AST;
 import ast.NodeKind;
@@ -207,6 +208,13 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
             }
         }*/
 
+        for (int i = 0; i < ctx.procedureAndFunctionDeclarationPart().size(); i++) {
+            // Visita um por um, com o 0 sendo o primeiro (fora do fecho), e
+            // os demais dentro do fecho.
+            AST child = visit(ctx.procedureAndFunctionDeclarationPart(i));
+            node.addChild(child);
+        }
+
         if (ctx.variableDeclarationPart().size() > 0){
             node.addChild(visit(ctx.variableDeclarationPart(0)));
         }
@@ -216,6 +224,51 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         }
         
         return node;
+    }
+
+    @Override public AST visitProcedureAndFunctionDeclarationPart(pascalParser.ProcedureAndFunctionDeclarationPartContext ctx) {
+        return visit(ctx.procedureOrFunctionDeclaration().functionDeclaration());
+    }
+
+    @Override public AST visitFunctionDeclaration(pascalParser.FunctionDeclarationContext ctx) {
+
+        visit(ctx.resultType());
+
+        AST identifier = visit(ctx.identifier());
+
+        AST parameterList = null;
+        if(ctx.formalParameterList() != null){
+            parameterList = visit(ctx.formalParameterList());
+        }
+
+        AST block = visit(ctx.block());
+
+
+        if(ctx.formalParameterList() != null){
+            return AST.newSubtree(NodeKind.FUNCTION_NODE, NO_TYPE, identifier, parameterList, block);
+        }
+
+        return AST.newSubtree(NodeKind.FUNCTION_NODE, NO_TYPE, identifier, block);
+    }
+
+    @Override public AST visitFormalParameterList(pascalParser.FormalParameterListContext ctx) {
+        AST node = AST.newSubtree(NodeKind.PARAMETER_LIST_NODE, NO_TYPE);
+        // Basta pegar o size do formalParameterSection pra saber quantos tem.
+        for (int i = 0; i < ctx.formalParameterSection().size(); i++) {
+            // Visita um por um, com o 0 sendo o primeiro (fora do fecho), e
+            // os demais dentro do fecho.
+            AST child = visit(ctx.formalParameterSection(i).parameterGroup());
+            node.addChild(child);
+        }
+        // Aqui deveria retornar um nó da AST.
+        return node;
+    }
+
+    @Override public AST visitParameterGroup(pascalParser.ParameterGroupContext ctx) {
+        
+        visit(ctx.typeIdentifier());
+
+        return visit(ctx.identifierList());
     }
 
     @Override public AST visitVariableDeclarationPart(pascalParser.VariableDeclarationPartContext ctx) { 
@@ -232,9 +285,13 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     public AST visitVariableDeclaration(pascalParser.VariableDeclarationContext ctx) {
         //Reset
         this.lastDeclType = NO_TYPE;
-        visit(ctx.type_());
+        AST type = visit(ctx.type_());
 
         AST node = visit(ctx.identifierList());
+
+        if(type != null){
+            node.addChild(type);
+        }
 
     	return node;
     }
@@ -256,6 +313,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     @Override
     public AST visitIdentifier(pascalParser.IdentifierContext ctx) {
         AST node;
+        System.out.println(ctx.IDENT().getSymbol());
         if (this.lastDeclType == NO_TYPE){
             node = AST.newSubtree(NodeKind.IDENTIFIER_NODE, NO_TYPE);
         }
@@ -316,11 +374,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     }
 
     @Override public AST visitStatement(pascalParser.StatementContext ctx) {
-        AST node = AST.newSubtree(NodeKind.STATEMENT_NODE, NO_TYPE);
-        
-        node.addChild(visit(ctx.unlabelledStatement()));
-
-        return node;
+        return visit(ctx.unlabelledStatement());
     }
 
     
@@ -350,6 +404,18 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
     @Override public AST visitSimpleStatement(pascalParser.SimpleStatementContext ctx) {
         return visit(ctx.assignmentStatement());
+    }
+
+	@Override public AST visitParameterList(pascalParser.ParameterListContext ctx) {
+        AST node = AST.newSubtree(NodeKind.PARAMETER_LIST_NODE, NO_TYPE);
+        // Basta pegar o size do formalParameterSection pra saber quantos tem.
+        for (int i = 0; i < ctx.actualParameter().size(); i++) {
+            // Visita um por um, com o 0 sendo o primeiro (fora do fecho), e
+            // os demais dentro do fecho.
+            AST child = visit(ctx.actualParameter(i).expression());
+            node.addChild(child);
+        }
+        return node;
     }
 
     @Override 
@@ -495,15 +561,67 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
             return visit(ctx.variable());
         }
 
+        if (ctx.functionDesignator() != null) {
+            return visit(ctx.functionDesignator());
+        }
+
         return super.visitFactor(ctx);
     }
 
-// Fazer visitVariable aceitar vetor tambem;
-// (AT identifier | identifier) (LBRACK expression (COMMA expression)* RBRACK
+	@Override public AST visitFunctionDesignator(pascalParser.FunctionDesignatorContext ctx) {
+        // Checar se ctx.identifier esta na FUNCTION TABLE
+
+        // Caso a função exista, checar se PARAMETER_LIST bate
+
+        // Caso alguma das condições acima não seja verdadeira, raise error
+        AST identifier = checkVar(ctx.identifier().IDENT().getSymbol());
+        AST parameterList = visit(ctx.parameterList());
+
+        // Estou passando o tipo da função na mão, tem que pegar o valor de FUNCTION TABLE e colocar na subtree.
+
+        return AST.newSubtree(NodeKind.FUNCTION_DESIGN_NODE, Type.INT_TYPE, identifier, parameterList);
+    }
 
     @Override public AST visitVariable(pascalParser.VariableContext ctx) {
+        if (ctx.LBRACK(0) != null) {
+            int index = vt.getIndex(ctx.identifier(0).getText().toLowerCase());
+            AST node = AST.newSubtree(VAR_USE_NODE, vt.getType(index));
+            Token token = ctx.identifier(0).IDENT().getSymbol();
+
+            // Adiciona o array como primeiro elemento do subscript
+            node.addChild(new AST(VAR_USE_NODE,index,ARRAY_TYPE));
+            
+            // Adiciona os índices como elementos do subscript
+            for (var range : ctx.expression()) {
+                AST exprNode = visit(range);
+
+                if (exprNode.type != INT_TYPE) {
+                    String msg = String.format(
+                        "line %d: array index type('%s') is incompatible, index must be an integer.",
+                        token.getLine(), exprNode.type);
+                    System.err.printf("%s",msg);
+                }
+
+                node.addChild(exprNode);
+            }
+
+            //checkSubscriptDimension(ctx.expression().size(), var, token);
+            
+            return node;
+        }
+        
         return checkVar(ctx.identifier(0).IDENT().getSymbol());
     }
+/*
+    private void checkSubscriptDimension(int subscriptDim, Array array, Token token) {
+        if (subscriptDim != array.getDimensionSize()) {
+            String msg = String.format(
+                "line %d: inconsistent number of indice(s) for array '%s'," +
+                " informed %d indice(s) being necessary %d.",
+                token.getLine(), token.getText().toLowerCase(), subscriptDim, array.getDimensionSize());
+            System.err.printf("%s",msg);
+        }
+    }*/
 
     @Override public AST visitExprIntegerVal(pascalParser.ExprIntegerValContext ctx) {
         int intData = Integer.parseInt(ctx.getText());
@@ -533,8 +651,8 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     public AST visitIfStatement(pascalParser.IfStatementContext ctx) {
         // Analisa a expressão booleana.
         AST exprNode = visit(ctx.expression());
-        AST thenNode = AST.newSubtree(NodeKind.STATEMENT_NODE, NO_TYPE); 
-        thenNode.addChild(visit(ctx.statement(0).unlabelledStatement()));
+
+        AST thenNode = visit(ctx.statement(0).unlabelledStatement());
 
         checkBoolExpr(ctx.IF().getSymbol().getLine(), "if", exprNode.type);
 

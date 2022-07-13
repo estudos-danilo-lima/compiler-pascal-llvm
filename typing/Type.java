@@ -32,6 +32,11 @@ public enum Type {
             return "string";
         }
 	},
+	ARRAY_TYPE {
+        public String toString() {
+            return "array";
+        }
+    },
 	NO_TYPE { // Indica um erro de tipos.
 		public String toString() {
             return "no_type";
