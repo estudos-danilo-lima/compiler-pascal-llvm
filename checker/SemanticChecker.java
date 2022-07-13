@@ -356,8 +356,13 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         isArray = true;
 
         visit(ctx.componentType().type_());
+        AST node = AST.newSubtree(NodeKind.ARRAY_NODE,ARRAY_TYPE);
+        for(int i = 0; i < ctx.typeList().indexType().size(); i++){
+            AST child = visit(ctx.typeList().indexType(i).simpleType().subrangeType());
+            node.addChild(child);
+        }
 
-        return visit(ctx.typeList().indexType(0).simpleType().subrangeType());
+        return node;
     }
 
     @Override public AST visitSubrangeType(pascalParser.SubrangeTypeContext ctx) {
