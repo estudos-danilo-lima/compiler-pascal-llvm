@@ -46,6 +46,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import tables.ArrayTable;
 import tables.StrTable;
+import tables.FunctionTable;
 import tables.VarTable;
 import tables.Range;
 
@@ -83,11 +84,16 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
 	private StrTable st = new StrTable();   // Tabela de strings.
     private VarTable vt = new VarTable();   // Tabela de variáveis.
+	private FunctionTable ft = new FunctionTable();   // Tabela de funções.
     private ArrayTable at = new ArrayTable(); //Tabela de arrays
 
     Type lastDeclType = NO_TYPE;  // Variável "global" com o último tipo declarado.
     Boolean isArray = false;
+    Boolean isFunction = false;
     Range lastDeclRange;
+    AST rangeArray;
+
+    List<Type> parameters = new ArrayList<Type>();
 
     AST root; // Nó raiz da AST sendo construída.
 
@@ -106,6 +112,19 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     	return new AST(VAR_USE_NODE, idx, vt.getType(idx));
     }
 
+    AST checkFunc(Token token) {
+    	String text = token.getText();
+    	int line = token.getLine();
+   		int idx = ft.lookupFunc(text);
+    	if (idx == -1) {
+    		System.err.printf("SEMANTIC ERROR (%d): variable '%s' was not declared.\n", line, text);
+    		// A partir de agora vou abortar no primeiro erro para facilitar.
+    		System.exit(1);
+            return null; // Never reached.
+        }
+    	return new AST(VAR_USE_NODE, idx, ft.getType(idx));
+    }
+
     // Cria uma nova variável a partir do dado token.
     // Retorna um nó do tipo 'var declaration'.
     AST newVar(Token token) {
@@ -122,6 +141,20 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         if (isArray){
             at.addArray(text, line, lastDeclType,lastDeclRange);
         }
+        return new AST(NodeKind.VAR_DECL_NODE, idx, lastDeclType);
+    }
+
+    AST newFunc(Token token) {
+    	String text = token.getText();
+    	int line = token.getLine();
+   		int idx = ft.lookupFunc(text);
+        if (idx != -1) {
+        	System.err.printf("SEMANTIC ERROR (%d): function '%s' already declared at line %d.\n", line, text, vt.getLine(idx));
+        	// A partir de agora vou abortar no primeiro erro para facilitar.
+        	System.exit(1);
+            return null; // Never reached.
+        }
+        idx = ft.addFunction(text, line, lastDeclType);
         return new AST(NodeKind.VAR_DECL_NODE, idx, lastDeclType);
     }
 
@@ -171,6 +204,8 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     	System.out.print(vt);
     	System.out.print("\n\n");
         System.out.print(at);
+    	System.out.print("\n\n");
+        System.out.print(ft);
     	System.out.print("\n\n");
     }
 
@@ -242,6 +277,8 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
     @Override public AST visitFunctionDeclaration(pascalParser.FunctionDeclarationContext ctx) {
 
+        isFunction = true;
+
         visit(ctx.resultType());
 
         AST identifier = visit(ctx.identifier());
@@ -249,6 +286,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         AST parameterList = null;
         if(ctx.formalParameterList() != null){
             parameterList = visit(ctx.formalParameterList());
+            ft.
         }
 
         AST block = visit(ctx.block());
@@ -296,13 +334,11 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         //Reset
         this.lastDeclType = NO_TYPE;
         isArray = false;
-        AST type = visit(ctx.type_());
+        rangeArray = null;
+
+        rangeArray = visit(ctx.type_());
 
         AST node = visit(ctx.identifierList());
-
-        if(type != null){
-            node.addChild(type);
-        }
 
     	return node;
     }
@@ -315,7 +351,11 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
             // Visita um por um, com o 0 sendo o primeiro (fora do fecho), e
             // os demais dentro do fecho.
             AST child = visit(ctx.identifier(i));
+            if (rangeArray != null){
+                child.addChild(rangeArray);
+            }
             node.addChild(child);
+            
         }
         // Aqui deveria retornar um nó da AST.
         return node;
@@ -325,7 +365,12 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     public AST visitIdentifier(pascalParser.IdentifierContext ctx) {
         AST node;
         System.out.println(ctx.IDENT().getSymbol());
-        if (this.lastDeclType == NO_TYPE){
+
+        if (isFunction){
+            isFunction = false;
+            node = newFunc(ctx.IDENT().getSymbol());
+        }
+        else if (this.lastDeclType == NO_TYPE){
             node = AST.newSubtree(NodeKind.IDENTIFIER_NODE, NO_TYPE);
         }
         else{
@@ -356,13 +401,8 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         isArray = true;
 
         visit(ctx.componentType().type_());
-        AST node = AST.newSubtree(NodeKind.ARRAY_NODE,ARRAY_TYPE);
-        for(int i = 0; i < ctx.typeList().indexType().size(); i++){
-            AST child = visit(ctx.typeList().indexType(i).simpleType().subrangeType());
-            node.addChild(child);
-        }
-
-        return node;
+        return visit(ctx.typeList().indexType(0).simpleType().subrangeType());
+        
     }
 
     @Override public AST visitSubrangeType(pascalParser.SubrangeTypeContext ctx) {
@@ -597,7 +637,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         // Caso a função exista, checar se PARAMETER_LIST bate
 
         // Caso alguma das condições acima não seja verdadeira, raise error
-        AST identifier = checkVar(ctx.identifier().IDENT().getSymbol());
+        AST identifier = checkFunc(ctx.identifier().IDENT().getSymbol());
         AST parameterList = visit(ctx.parameterList());
 
         // Estou passando o tipo da função na mão, tem que pegar o valor de FUNCTION TABLE e colocar na subtree.
