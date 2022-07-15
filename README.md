@@ -30,7 +30,7 @@ Then, you can either run a single example like:
 
 Or run all the available examples like:
   ```
-  make runall
+  ./runall.sh
   ```
 
 Alternatively, runing the snipet bellow will read input from stdin, when finished press 'CTRL+D':
