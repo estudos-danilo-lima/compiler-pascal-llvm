@@ -54,7 +54,8 @@ import typing.Conv;
 import typing.Conv.Unif;
 import typing.Type;
 
-
+import java.util.List;
+import java.util.ArrayList;
 
 
 /*
@@ -90,10 +91,12 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     Type lastDeclType = NO_TYPE;  // Variável "global" com o último tipo declarado.
     Boolean isArray = false;
     Boolean isFunction = false;
+    Boolean isParameter = false;
+    Boolean CheckParameter = false;
     Range lastDeclRange;
     AST rangeArray;
 
-    List<Type> parameters = new ArrayList<Type>();
+    ArrayList<typing.Type> parameters = new ArrayList<typing.Type>();
 
     AST root; // Nó raiz da AST sendo construída.
 
@@ -117,12 +120,12 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     	int line = token.getLine();
    		int idx = ft.lookupFunc(text);
     	if (idx == -1) {
-    		System.err.printf("SEMANTIC ERROR (%d): variable '%s' was not declared.\n", line, text);
+    		System.err.printf("SEMANTIC ERROR (%d): function '%s' was not declared.\n", line, text);
     		// A partir de agora vou abortar no primeiro erro para facilitar.
     		System.exit(1);
             return null; // Never reached.
         }
-    	return new AST(VAR_USE_NODE, idx, ft.getType(idx));
+    	return new AST(NodeKind.FUNC_IDENT_NODE, idx, ft.getType(idx));
     }
 
     // Cria uma nova variável a partir do dado token.
@@ -155,7 +158,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
             return null; // Never reached.
         }
         idx = ft.addFunction(text, line, lastDeclType);
-        return new AST(NodeKind.VAR_DECL_NODE, idx, lastDeclType);
+        return new AST(NodeKind.FUNC_IDENT_NODE, idx, lastDeclType);
     }
 
     private static AST checkAssign(int lineNo, AST l, AST r) {
@@ -211,7 +214,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
     // Exibe a AST no formato DOT em stderr.
     void printAST() {
-    	AST.printDot(root, vt);
+    	AST.printDot(root, vt, ft);
     }
 
     // ----------------------------------------------------------------------------
@@ -283,11 +286,16 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
         AST identifier = visit(ctx.identifier());
 
+        isParameter = true;
+
         AST parameterList = null;
         if(ctx.formalParameterList() != null){
             parameterList = visit(ctx.formalParameterList());
-            ft.
+            ft.SetParameterList(new ArrayList<typing.Type>(parameters));
+            parameters.clear();
         }
+
+        isParameter = false;
 
         AST block = visit(ctx.block());
 
@@ -367,14 +375,25 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         System.out.println(ctx.IDENT().getSymbol());
 
         if (isFunction){
+            System.out.println("Entrou no isFunction");
             isFunction = false;
+            // Insere a definição da função na tabela de funções;
             node = newFunc(ctx.IDENT().getSymbol());
+            
+            // Cria uma variável para o retorno da função;
+            newVar(ctx.IDENT().getSymbol());
         }
         else if (this.lastDeclType == NO_TYPE){
             node = AST.newSubtree(NodeKind.IDENTIFIER_NODE, NO_TYPE);
         }
         else{
             node = newVar(ctx.IDENT().getSymbol());
+            if (isParameter){
+                parameters.add(lastDeclType);
+                for (typing.Type x : parameters){
+                    System.out.println("    Parametros: " + x.toString());
+                }
+            }
         }
         return node;
     }
@@ -466,7 +485,44 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     }
 
     @Override public AST visitSimpleStatement(pascalParser.SimpleStatementContext ctx) {
+        if (ctx.procedureStatement() != null)
+            return visit(ctx.procedureStatement());
         return visit(ctx.assignmentStatement());
+    }
+
+    @Override public AST visitProcedureStatement(pascalParser.ProcedureStatementContext ctx) {
+        Token token = ctx.identifier().IDENT().getSymbol();
+
+        AST identifier = checkFunc(token);
+
+        CheckParameter = true;
+
+        AST parameterList = visit(ctx.parameterList());
+
+        // Busca os parametros da função que foi chamada.
+        String text = ctx.identifier().IDENT().getSymbol().getText();
+        int idx = ft.lookupFunc(text);
+        int line = token.getLine();
+        ArrayList<typing.Type> parameters_esperados = ft.getParameters(idx);
+
+        // Compara os parametros que foram lidos com os esperados da função.
+        System.out.printf("Esperado: (%d) Parametros-Recebidos: (%d)\n", parameters_esperados.size(), parameters.size());
+        if (parameters.size() != parameters_esperados.size()){
+            System.err.printf("SEMANTIC ERROR (%d): function '%s' mismatch number of arguments.\n", line, text);
+            System.exit(1);
+        }
+
+        for (int i=0; i<parameters.size(); i++){
+            if (parameters.get(i) != parameters_esperados.get(i)){
+                System.err.printf("SEMANTIC ERROR (%d): function '%s' mismatch type of arguments.\n", line, text);
+                System.exit(1);
+            }
+        }
+
+        parameters.clear();
+        CheckParameter = false;
+
+        return AST.newSubtree(NodeKind.PROCEDURE_DESIGN_NODE, ft.getType(idx), identifier, parameterList);
     }
 
 	@Override public AST visitParameterList(pascalParser.ParameterListContext ctx) {
@@ -632,59 +688,65 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     }
 
 	@Override public AST visitFunctionDesignator(pascalParser.FunctionDesignatorContext ctx) {
-        // Checar se ctx.identifier esta na FUNCTION TABLE
+        Token token = ctx.identifier().IDENT().getSymbol();
 
-        // Caso a função exista, checar se PARAMETER_LIST bate
+        AST identifier = checkFunc(token);
 
-        // Caso alguma das condições acima não seja verdadeira, raise error
-        AST identifier = checkFunc(ctx.identifier().IDENT().getSymbol());
+        CheckParameter = true;
+
         AST parameterList = visit(ctx.parameterList());
 
-        // Estou passando o tipo da função na mão, tem que pegar o valor de FUNCTION TABLE e colocar na subtree.
+        // Busca os parametros da função que foi chamada.
+        String text = ctx.identifier().IDENT().getSymbol().getText();
+        int idx = ft.lookupFunc(text);
+        int line = token.getLine();
+        ArrayList<typing.Type> parameters_esperados = ft.getParameters(idx);
 
-        return AST.newSubtree(NodeKind.FUNCTION_DESIGN_NODE, Type.INT_TYPE, identifier, parameterList);
+        // Compara os parametros que foram lidos com os esperados da função.
+        System.out.printf("Esperado: (%d) Parametros-Recebidos: (%d)\n", parameters_esperados.size(), parameters.size());
+        if (parameters.size() != parameters_esperados.size()){
+            System.err.printf("SEMANTIC ERROR (%d): function '%s' mismatch number of arguments.\n", line, text);
+            System.exit(1);
+        }
+
+        for (int i=0; i<parameters.size(); i++){
+            if (parameters.get(i) != parameters_esperados.get(i)){
+                System.err.printf("SEMANTIC ERROR (%d): function '%s' mismatch type of arguments.\n", line, text);
+                System.exit(1);
+            }
+        }
+
+        parameters.clear();
+        CheckParameter = false;
+
+        return AST.newSubtree(NodeKind.FUNCTION_DESIGN_NODE, ft.getType(idx), identifier, parameterList);
     }
 
     @Override public AST visitVariable(pascalParser.VariableContext ctx) {
+        AST node = checkVar(ctx.identifier(0).IDENT().getSymbol());
+
+        if (CheckParameter){
+            parameters.add(node.type);
+        }
+
         if (ctx.LBRACK(0) != null) {
-            int index = vt.getIndex(ctx.identifier(0).getText().toLowerCase());
-            AST node = AST.newSubtree(VAR_USE_NODE, vt.getType(index));
+            int index = at.getIndex(ctx.identifier(0).getText().toLowerCase());
             Token token = ctx.identifier(0).IDENT().getSymbol();
-
-            // Adiciona o array como primeiro elemento do subscript
-            node.addChild(new AST(VAR_USE_NODE,index,ARRAY_TYPE));
             
-            // Adiciona os índices como elementos do subscript
-            for (var range : ctx.expression()) {
-                AST exprNode = visit(range);
+            AST exprNode = visit(ctx.expression(0));
 
-                if (exprNode.type != INT_TYPE) {
-                    String msg = String.format(
-                        "line %d: array index type('%s') is incompatible, index must be an integer.",
-                        token.getLine(), exprNode.type);
-                    System.err.printf("%s",msg);
-                }
-
-                node.addChild(exprNode);
+            if (exprNode.type != INT_TYPE) {
+                String msg = String.format(
+                    "line %d: array index type('%s') is incompatible, index must be an integer.",
+                    token.getLine(), exprNode.type);
+                System.err.printf("%s",msg);
             }
 
-            //checkSubscriptDimension(ctx.expression().size(), var, token);
-            
-            return node;
+            node.addChild(exprNode);
         }
         
-        return checkVar(ctx.identifier(0).IDENT().getSymbol());
+        return node;
     }
-/*
-    private void checkSubscriptDimension(int subscriptDim, Array array, Token token) {
-        if (subscriptDim != array.getDimensionSize()) {
-            String msg = String.format(
-                "line %d: inconsistent number of indice(s) for array '%s'," +
-                " informed %d indice(s) being necessary %d.",
-                token.getLine(), token.getText().toLowerCase(), subscriptDim, array.getDimensionSize());
-            System.err.printf("%s",msg);
-        }
-    }*/
 
     @Override public AST visitExprIntegerVal(pascalParser.ExprIntegerValContext ctx) {
         int intData = Integer.parseInt(ctx.getText());

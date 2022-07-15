@@ -93,7 +93,7 @@ constant
    | constantChr
    ;
 
-unsignedNumber
+ unsignedNumber
    : unsignedInteger # exprIntegerVal
    | unsignedReal # exprRealVal
    ;

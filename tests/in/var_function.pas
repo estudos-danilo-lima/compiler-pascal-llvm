@@ -1,16 +1,15 @@
 program exemplo;
-function max(num1:integer): integer;
-var
-   num2: integer;
+function max(num1, num2:integer): integer;
 begin
-    num1 := 10;
-    num2 := 20;
+    max := num1 + num2;
 end;
 
 var
  nome:string;
- cont: integer;
+ numero1, numero2, cont: integer;
 begin
+    numero1 := 10;
+    numero2 := 20;
     nome := 'Hello';
-    cont := max(1);
+    cont := max(numero1, numero2);
 end.

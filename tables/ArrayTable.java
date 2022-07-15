@@ -79,4 +79,13 @@ public final class ArrayTable {
 
 	}
 
+	public int getIndex(String name) {
+        for(int i = 0; i < this.table.size(); i++){
+			if(this.table.get(i).name.equals(name)){
+				return i;
+			}
+		}
+		return -1;
+    }
+
 }

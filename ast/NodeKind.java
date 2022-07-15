@@ -112,6 +112,11 @@ public enum NodeKind {
             return "procedureOrFunctionDeclaration";
         }
 	},
+    PROCEDURE_DESIGN_NODE {
+		public String toString() {
+            return "procedure designator";
+        }
+	},
     FUNC_DECL_NODE {
 		public String toString() {
             return "functionDeclaration";
@@ -120,6 +125,11 @@ public enum NodeKind {
     IDENTIFIER_NODE {
 		public String toString() {
             return "identifier";
+        }
+	},
+    FUNC_IDENT_NODE {
+		public String toString() {
+            return "";
         }
 	},
     IDENTIFIER_LIST_NODE {
@@ -256,7 +266,7 @@ public enum NodeKind {
 	        case REAL_VAL_NODE:
 	        case STR_VAL_NODE:
 	        case VAR_DECL_NODE:
-	        case VAR_USE_NODE: 
+	        case VAR_USE_NODE:
 	            return true;
 	        default:
 	            return false;

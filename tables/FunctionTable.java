@@ -13,6 +13,18 @@ public final class FunctionTable {
 	// tentei deixar o mais parecido possível com a original em C.
 	private List<Entry> table = new ArrayList<Entry>(); 
 	
+	public FunctionTable(){
+		// Cria a função built-in de leitura que só lê string.
+		this.addFunction("Readln", 0, Type.NO_TYPE);
+		ArrayList<typing.Type> params = new ArrayList<typing.Type>();
+		params.add(typing.Type.STR_TYPE);
+		this.SetParameterList(params);
+
+		// Cria a função built-in de escrita que só escreve string.
+		this.addFunction("Writeln", 0, Type.NO_TYPE);
+		this.SetParameterList(params);
+	}
+
 	public int lookupFunc(String s) {
 		for (int i = 0; i < table.size(); i++) {
 			if (table.get(i).name.equals(s)) {
@@ -29,13 +41,13 @@ public final class FunctionTable {
 		return idxAdded;
 	}
 
-	/*public void SetParameterList(String s, int line, Type type) {
-		Entry entry = new Entry(s, line, type);
-		int idxAdded = table.size();
-		table.add(entry);
-		return idxAdded;
-	}*/
+	public void SetParameterList(ArrayList<typing.Type> parameters) {
+		table.get(table.size()-1).parameters = parameters;
+	}
 	
+	public ArrayList<typing.Type> GetParameterList(int i) {
+		return table.get(i).parameters;
+	}
 	public String getName(int i) {
 		return table.get(i).name;
 	}
@@ -48,13 +60,22 @@ public final class FunctionTable {
 		return table.get(i).type;
 	}
 	
+	public ArrayList<Type> getParameters(int i) {
+		return table.get(i).parameters;
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		Formatter f = new Formatter(sb);
-		f.format("Functions table:\n");
+		f.format("Functions table: %d\n", table.size());
 		for (int i = 0; i < table.size(); i++) {
 			f.format("Entry %d -- name: %s, line: %d, type: %s\n", i,
 	                 getName(i), getLine(i), getType(i).toString());
+			if (table.get(i).parameters == null)
+				continue;
+			for (int j = 0; j < table.get(i).parameters.size(); j++) {
+				f.format("\t type: %s\n", table.get(i).parameters.get(j).toString());
+					}
 		}
 		f.close();
 		return sb.toString();
@@ -64,12 +85,13 @@ public final class FunctionTable {
 		private final String name;
 		private final int line;
 		private final Type type;
-        private ArrayList<VarTable> parameters = new ArrayList<Type>();
+        private ArrayList<typing.Type> parameters = new ArrayList<typing.Type>();
 		
 		Entry(String name, int line, Type type) {
 			this.name = name;
 			this.line = line;
 			this.type = type;
+			this.parameters = null;
 		}
 	}
 
