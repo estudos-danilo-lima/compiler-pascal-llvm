@@ -26,6 +26,10 @@ public final class FunctionTable {
 		this.SetParameterList(params);
 	}
 
+	public VarTable getVarTable(int i) {
+		return table.get(i).vt;
+	}
+
 	public int func_lookupVarTable(String s) {
 		return table.get(table.size()-1).vt.lookupVar(s);
 	}

@@ -73,23 +73,29 @@ public class AST {
 
 	// Imprime recursivamente a codificação em DOT da subárvore começando no nó atual.
 	// Usa stderr como saída para facilitar o redirecionamento, mas isso é só um hack.
-	private int printNodeDot() {
+	private int printNodeDot(int idx) {
 		int myNr = nr++;
 
 	    System.err.printf("node%d[label=\"", myNr);
 	    if (this.type != NO_TYPE) {
 	    	System.err.printf("(%s) ", this.type.toString());
 	    }
-
-	    if (this.kind == NodeKind.VAR_DECL_NODE || this.kind == NodeKind.VAR_USE_NODE) {
-			System.err.printf("%s@", vt.getName(this.intData));
-	    }
+		
+		if (this.kind == NodeKind.VAR_DECL_NODE || this.kind == NodeKind.VAR_USE_NODE) {
+			// se o indice não for -1 significa que esta em uma função e tem que pegar sua varTable
+			if (idx != -1){
+				System.err.printf("%s@", ft.getVarTable(idx+2).getName(this.intData));
+			}
+			else {
+				System.err.printf("%s@", vt.getName(this.intData));
+			}
+		}
 		else if(this.kind == NodeKind.FUNC_IDENT_NODE){
 			System.err.printf("%s", ft.getName(this.intData));
 		} else {
-	    	System.err.printf("%s", this.kind.toString());
-	    }
-
+			System.err.printf("%s", this.kind.toString());
+		}
+		
 	    if (NodeKind.hasData(this.kind)) {
 	        if (this.kind == NodeKind.REAL_VAL_NODE) {
 	        	System.err.printf("%.2f", this.floatData);
@@ -102,7 +108,18 @@ public class AST {
 	    System.err.printf("\"];\n");
 
 	    for (int i = 0; i < this.children.size(); i++) {
-	        int childNr = this.children.get(i).printNodeDot();
+			int childNr;
+			// se o filho for uma função, passa o índice do filho para poder acessar sua tabela de variavel.
+			if (this.children.get(i).kind == NodeKind.FUNCTION_NODE){
+		        childNr = this.children.get(i).printNodeDot(i);
+			}
+			// repassa o valor, para os netos...
+			else if(idx != -1){
+				childNr = this.children.get(i).printNodeDot(idx);
+			}
+			else{
+		        childNr = this.children.get(i).printNodeDot(-1);
+			}
 	        System.err.printf("node%d -> node%d;\n", myNr, childNr);
 	    }
 	    return myNr;
@@ -114,7 +131,7 @@ public class AST {
 	    vt = table;
 		ft = fTable;
 	    System.err.printf("digraph {\ngraph [ordering=\"out\"];\n");
-	    tree.printNodeDot();
+	    tree.printNodeDot(-1);
 	    System.err.printf("}\n");
 	}
 }

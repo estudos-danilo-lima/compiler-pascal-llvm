@@ -93,6 +93,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     Boolean isFunction = false;
     Boolean isParameter = false;
     Boolean CheckParameter = false;
+    Boolean isFunctionVariable = false;
     Range lastDeclRange;
     AST rangeArray;
 
@@ -113,6 +114,19 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
             return null; // Never reached.
         }
     	return new AST(VAR_USE_NODE, idx, vt.getType(idx));
+    }
+
+    AST checkFuncVar(Token token) {
+    	String text = token.getText();
+    	int line = token.getLine();
+   		int idx = ft.func_lookupVarTable(text);
+    	if (idx == -1) {
+    		System.err.printf("SEMANTIC ERROR (%d): variable '%s' was not declared.\n", line, text);
+    		// A partir de agora vou abortar no primeiro erro para facilitar.
+    		System.exit(1);
+            return null; // Never reached.
+        }
+    	return new AST(VAR_USE_NODE, idx, ft.getVarTable(ft.getSize()-1).getType(idx));
     }
 
     AST checkFunc(Token token) {
@@ -161,7 +175,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         return new AST(NodeKind.FUNC_IDENT_NODE, idx, lastDeclType);
     }
 
-        AST newFuncVar(Token token) {
+    AST newFuncVar(Token token) {
     	String text = token.getText();
     	int line = token.getLine();
    		int idx = ft.func_lookupVarTable(text);
@@ -314,8 +328,11 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
         isParameter = false;
 
+        isFunctionVariable = true;
+
         AST block = visit(ctx.block());
 
+        isFunctionVariable = false;
 
         if(ctx.formalParameterList() != null){
             return AST.newSubtree(NodeKind.FUNCTION_NODE, NO_TYPE, identifier, parameterList, block);
@@ -396,15 +413,21 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
             node = newFunc(ctx.IDENT().getSymbol());
             
             // Cria uma variável para o retorno da função;
-            newVar(ctx.IDENT().getSymbol());
+            newFuncVar(ctx.IDENT().getSymbol());
+        }
+        else if (isFunctionVariable){
+            node = newFuncVar(ctx.IDENT().getSymbol());
         }
         else if (this.lastDeclType == NO_TYPE){
             node = AST.newSubtree(NodeKind.IDENTIFIER_NODE, NO_TYPE);
         }
         else{
-            node = newVar(ctx.IDENT().getSymbol());
             if (isParameter){
+                node = newFuncVar(ctx.IDENT().getSymbol());
                 parameters.add(lastDeclType);
+            }
+            else{
+                node = newVar(ctx.IDENT().getSymbol());
             }
         }
         return node;
@@ -735,7 +758,15 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 
     @Override public AST visitVariable(pascalParser.VariableContext ctx) {
 
-        AST node = checkVar(ctx.identifier(0).IDENT().getSymbol());
+        AST node;
+
+        // Se é função de variavel, da lookup na varTable da função.
+        if (isFunctionVariable){
+            node = checkFuncVar(ctx.identifier(0).IDENT().getSymbol());
+        }
+        else{
+            node = checkVar(ctx.identifier(0).IDENT().getSymbol());
+        }
 
         if (CheckParameter){
             parameters.add(node.type);
