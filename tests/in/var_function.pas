@@ -1,7 +1,9 @@
 program exemplo;
 function max(num1, num2:integer): integer;
+var
+    num3: integer;
 begin
-    max := num1 + num2;
+    max := num1 + num2 + num3;
 end;
 
 var

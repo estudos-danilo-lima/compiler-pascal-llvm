@@ -161,6 +161,23 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         return new AST(NodeKind.FUNC_IDENT_NODE, idx, lastDeclType);
     }
 
+        AST newFuncVar(Token token) {
+    	String text = token.getText();
+    	int line = token.getLine();
+   		int idx = ft.func_lookupVarTable(text);
+        if (idx != -1) {
+        	System.err.printf("SEMANTIC ERROR (%d): variable '%s' already declared at line %d.\n", line, text, vt.getLine(idx));
+        	// A partir de agora vou abortar no primeiro erro para facilitar.
+        	System.exit(1);
+            return null; // Never reached.
+        }
+        idx = ft.setVariable(text, line, lastDeclType);
+        if (isArray){
+            at.addArray(text, line, lastDeclType,lastDeclRange);
+        }
+        return new AST(NodeKind.VAR_DECL_NODE, idx, lastDeclType);
+    }
+
     private static AST checkAssign(int lineNo, AST l, AST r) {
     	Type lt = l.type;
     	Type rt = r.type;
@@ -372,10 +389,8 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     @Override
     public AST visitIdentifier(pascalParser.IdentifierContext ctx) {
         AST node;
-        System.out.println(ctx.IDENT().getSymbol());
 
         if (isFunction){
-            System.out.println("Entrou no isFunction");
             isFunction = false;
             // Insere a definição da função na tabela de funções;
             node = newFunc(ctx.IDENT().getSymbol());
@@ -390,9 +405,6 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
             node = newVar(ctx.IDENT().getSymbol());
             if (isParameter){
                 parameters.add(lastDeclType);
-                for (typing.Type x : parameters){
-                    System.out.println("    Parametros: " + x.toString());
-                }
             }
         }
         return node;
@@ -506,7 +518,6 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         ArrayList<typing.Type> parameters_esperados = ft.getParameters(idx);
 
         // Compara os parametros que foram lidos com os esperados da função.
-        System.out.printf("Esperado: (%d) Parametros-Recebidos: (%d)\n", parameters_esperados.size(), parameters.size());
         if (parameters.size() != parameters_esperados.size()){
             System.err.printf("SEMANTIC ERROR (%d): function '%s' mismatch number of arguments.\n", line, text);
             System.exit(1);
@@ -543,7 +554,8 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
 		AST exprNode = visit(ctx.expression());
 		// Visita o identificador da esquerda.
 		Token idToken = ctx.variable().identifier(0).IDENT().getSymbol();
-		AST idNode = checkVar(idToken);
+
+        AST idNode = visit(ctx.variable());
 		// Faz as verificações de tipos.
 		return checkAssign(idToken.getLine(), idNode, exprNode);
     }
@@ -703,7 +715,6 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         ArrayList<typing.Type> parameters_esperados = ft.getParameters(idx);
 
         // Compara os parametros que foram lidos com os esperados da função.
-        System.out.printf("Esperado: (%d) Parametros-Recebidos: (%d)\n", parameters_esperados.size(), parameters.size());
         if (parameters.size() != parameters_esperados.size()){
             System.err.printf("SEMANTIC ERROR (%d): function '%s' mismatch number of arguments.\n", line, text);
             System.exit(1);
@@ -723,12 +734,12 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     }
 
     @Override public AST visitVariable(pascalParser.VariableContext ctx) {
+
         AST node = checkVar(ctx.identifier(0).IDENT().getSymbol());
 
         if (CheckParameter){
             parameters.add(node.type);
         }
-
         if (ctx.LBRACK(0) != null) {
             int index = at.getIndex(ctx.identifier(0).getText().toLowerCase());
             Token token = ctx.identifier(0).IDENT().getSymbol();
@@ -740,6 +751,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
                     "line %d: array index type('%s') is incompatible, index must be an integer.",
                     token.getLine(), exprNode.type);
                 System.err.printf("%s",msg);
+                System.exit(1);
             }
 
             node.addChild(exprNode);

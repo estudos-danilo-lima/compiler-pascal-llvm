@@ -22,6 +22,10 @@ public final class VarTable {
 		return -1;
 	}
 	
+	public int getSize(){
+		return this.table.size();
+	}
+
 	public int addVar(String s, int line, Type type) {
 		Entry entry = new Entry(s, line, type);
 		int idxAdded = table.size();
