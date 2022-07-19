@@ -4,6 +4,9 @@ Compiler for pascal language to llvm
 ## Reports
 All the reports about the checkpoints are inside the documentation folder.
 
+## Output
+After running the code, the out folder will be available inside the tests folder
+
 ## Requirements
 - java and javac
 
