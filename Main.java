@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import code.Interpreter;
 import parser.pascalLexer;
 import parser.pascalParser;
 import checker.SemanticChecker;
@@ -52,6 +53,12 @@ public class Main {
 		System.out.println("PARSE SUCCESSFUL!");
 		checker.printTables();
 		checker.printAST();
+
+		// Saída final. Se chegou até aqui é porque não houve erro.
+		// Executa o interpretador de código.
+		System.out.println("Saída do Interpretador:");
+		Interpreter interpreter = new Interpreter(checker.st, checker.vt);
+		interpreter.execute(checker.getAST());
 	}
 
 }

@@ -83,10 +83,10 @@ import java.util.ArrayList;
  */
 public class SemanticChecker extends pascalBaseVisitor<AST> {
 
-	private StrTable st = new StrTable();   // Tabela de strings.
-    private VarTable vt = new VarTable();   // Tabela de variáveis.
-	private FunctionTable ft = new FunctionTable();   // Tabela de funções.
-    private ArrayTable at = new ArrayTable(); //Tabela de arrays
+	public StrTable st = new StrTable();   // Tabela de strings.
+    public VarTable vt = new VarTable();   // Tabela de variáveis.
+	public FunctionTable ft = new FunctionTable();   // Tabela de funções.
+    public ArrayTable at = new ArrayTable(); //Tabela de arrays
 
     Type lastDeclType = NO_TYPE;  // Variável "global" com o último tipo declarado.
     Boolean isArray = false;
@@ -246,6 +246,11 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     // Exibe a AST no formato DOT em stderr.
     public void printAST() {
     	AST.printDot(root, vt, ft);
+    }
+
+    // Retorna a AST construída ao final da análise.
+    public AST getAST() {
+    	return this.root;
     }
 
     // ----------------------------------------------------------------------------
