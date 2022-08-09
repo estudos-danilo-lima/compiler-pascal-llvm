@@ -18,7 +18,7 @@ public final class FunctionTable {
 		// Cria a função built-in de leitura que só lê string.
 		this.addFunction("Readln", 0, Type.NO_TYPE);
 		ArrayList<typing.Type> params = new ArrayList<typing.Type>();
-		params.add(typing.Type.STR_TYPE);
+		params.add(typing.Type.INT_TYPE);
 		this.SetParameterList(params);
 
 		// Cria a função built-in de escrita que só escreve string.

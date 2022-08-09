@@ -31,18 +31,23 @@ public abstract class ASTBaseVisitor<T> {
 	        case VAR_DECL_PART_NODE:	return visitVarDeclPart(node);
 	        case IDENTIFIER_LIST_NODE:	return visitIdentifierList(node);
 	        case STATEMENT_LIST_NODE:  	return visitStatementList(node);
+			case PROCEDURE_DESIGN_NODE: return visitProcedureDesignator(node);
+			case FUNC_IDENT_NODE: 		return visitFuncIdentifier(node);
+			case PARAMETER_LIST_NODE: 	return visitParameterList(node);
 	        case ASSIGN_NODE:   		return visitAssign(node);
-	        case EQ_NODE:       		return visitEq(node);
+
 	        case IF_NODE:       		return visitIf(node);
+			case ELSE_NODE:       		return visitElse(node);
+	        case EQ_NODE:       		return visitEq(node);
+			case GT_NODE:       		return visitGt(node);
 	        case LT_NODE:       		return visitLt(node);
+	        case REPEAT_NODE:			return visitRepeat(node);
+
 	        case MINUS_NODE:    		return visitMinus(node);
 	        case OVER_NODE:     		return visitOver(node);
 	        case PLUS_NODE:     		return visitPlus(node);
-	        case READ_NODE:     		return visitRead(node);
-	        case REPEAT_NODE:			return visitRepeat(node);
 	        case TIMES_NODE:    		return visitTimes(node);
-	        case VAR_DECL_NODE: 		return visitVarDecl(node);
-	        case WRITE_NODE:    		return visitWrite(node);
+
 	        case VAR_USE_NODE:  		return visitVarUse(node);
 	
 	        case INT_VAL_NODE:  		return visitIntVal(node);
@@ -80,13 +85,25 @@ public abstract class ASTBaseVisitor<T> {
 
 	protected abstract T visitStatementList(AST node);
 
-	protected abstract T visitAssign(AST node);
+	protected abstract T visitProcedureDesignator(AST node);
 
-	protected abstract T visitEq(AST node);
+	protected abstract T visitFuncIdentifier(AST node);
+
+	protected abstract T visitParameterList(AST node);
+
+	protected abstract T visitAssign(AST node);
 
 	protected abstract T visitIf(AST node);
 
+	protected abstract T visitElse(AST node);
+
+	protected abstract T visitEq(AST node);
+
+	protected abstract T visitGt(AST node);
+
 	protected abstract T visitLt(AST node);
+
+	protected abstract T visitRepeat(AST node);
 
 	protected abstract T visitMinus(AST node);
 
@@ -94,15 +111,7 @@ public abstract class ASTBaseVisitor<T> {
 
 	protected abstract T visitPlus(AST node);
 
-	protected abstract T visitRead(AST node);
-
-	protected abstract T visitRepeat(AST node);
-
 	protected abstract T visitTimes(AST node);
-
-	protected abstract T visitVarDecl(AST node);
-
-	protected abstract T visitWrite(AST node);
 
 	protected abstract T visitVarUse(AST node);
 

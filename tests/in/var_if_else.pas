@@ -1,11 +1,13 @@
 program exemplo;
 var
- nome:string;
+ nome1, nome2:string;
  num,cont:integer;
 begin
     num := 1 + 2;
-    if num > 2 then
-        nome := 'Hi'
+    nome1 := 'If\n';
+    nome2 := 'Else\n';
+    if num < 2 then
+        Writeln(nome1)
     else
-        cont := 5;
+        Writeln(nome2);
 end.

@@ -6,9 +6,9 @@ begin
     num := 1 + 2;
     if num > 2 then
     begin
-        nome := 'Hi';
-        cont := 3;
+        nome := 'If Begin\n';
+        Writeln(nome);
     end
     else
-        cont := 5;
+        Writeln(nome);
 end.

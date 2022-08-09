@@ -4,6 +4,7 @@ var
  num,cont:integer;
 begin
     num := 1 + 2;
+    nome := 'If\n';
     if num > 2 then
-        nome := 'Hi';
+        Writeln(nome);
 end.

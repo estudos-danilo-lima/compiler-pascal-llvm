@@ -57,7 +57,7 @@ public class Main {
 		// Saída final. Se chegou até aqui é porque não houve erro.
 		// Executa o interpretador de código.
 		System.out.println("Saída do Interpretador:");
-		Interpreter interpreter = new Interpreter(checker.st, checker.vt);
+		Interpreter interpreter = new Interpreter(checker.st, checker.vt, checker.ft);
 		interpreter.execute(checker.getAST());
 	}
 

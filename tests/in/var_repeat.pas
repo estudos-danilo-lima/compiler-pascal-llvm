@@ -1,13 +1,10 @@
 program exemplo;
 var
- nome:string;
- num,cont:integer;
+ num:integer;
 begin
-    nome := 'Hello';
-    num := 1 + 2;
-    cont := 3;
+    num := 4;
     repeat
         num := num - 1;
-        cont := cont + 1;
+        Writeln(num);
     until num > 0;
 end.

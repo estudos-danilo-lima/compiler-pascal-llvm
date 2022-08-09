@@ -3,5 +3,6 @@ var
  num:integer;
  texto: string;
 begin
-    Readln(texto);
+    Readln(num);
+    Writeln(num);
 end.
