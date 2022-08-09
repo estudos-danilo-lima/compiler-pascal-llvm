@@ -231,7 +231,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     // ----------------------------------------------------------------------------
 
     // Exibe o conteúdo das tabelas em stdout.
-    void printTables() {
+    public void printTables() {
         System.out.print("\n\n");
         System.out.print(st);
         System.out.print("\n\n");
@@ -244,7 +244,7 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
     }
 
     // Exibe a AST no formato DOT em stderr.
-    void printAST() {
+    public void printAST() {
     	AST.printDot(root, vt, ft);
     }
 

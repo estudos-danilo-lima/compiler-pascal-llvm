@@ -18,9 +18,6 @@ GRUN=$(JAVA) $(CLASS_PATH_OPTION) org.antlr.v4.gui.TestRig
 # Diretório para aonde vão os arquivos gerados pelo ANTLR.
 GEN_PATH=parser
 
-# Diretório aonde está a classe com a função main.
-MAIN_PATH=checker
-
 # Diretório para os arquivos .class
 BIN_PATH=bin
 
@@ -39,10 +36,10 @@ antlr: pascal.g4
 javac:
 	rm -rf $(BIN_PATH)
 	mkdir $(BIN_PATH)
-	$(JAVAC) $(CLASS_PATH_OPTION) -d $(BIN_PATH) */*.java
+	$(JAVAC) $(CLASS_PATH_OPTION) -d $(BIN_PATH) */*.java Main.java
 
 run:
-	$(JAVA) $(CLASS_PATH_OPTION):$(BIN_PATH) $(MAIN_PATH)/Main $(FILE)
+	$(JAVA) $(CLASS_PATH_OPTION):$(BIN_PATH) Main $(FILE)
 
 runallparser:
 	-for FILE in $(DATA)/*.pas; do \
