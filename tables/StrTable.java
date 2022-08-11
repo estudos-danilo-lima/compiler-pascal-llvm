@@ -23,6 +23,11 @@ public final class StrTable extends ArrayList<String> {
 		return i;
 	}
     
+	public String getString(Integer index) {
+		String str = this.get(index);
+		return str.substring(1, str.length() - 1);
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		Formatter f = new Formatter(sb);
