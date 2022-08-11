@@ -16,6 +16,10 @@ To install this compiler you must clone this repository as:
   git clone https://github.com/daniloelima/compiler-pascal-llvm.git 
   ```
 
+  ```
+  sudo apt install llvm-runtime
+  ```
+
 ## Running
 After clonning the repository, you need to acess the folder, like:
   ```
