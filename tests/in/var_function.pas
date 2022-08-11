@@ -2,7 +2,10 @@ program exemplo;
 function max(num1, num2:integer): integer;
 var
     num3: integer;
+    nome1: string;
 begin
+    nome1 := 'Dentro\n';
+    Writeln(nome1);
     max := num1 + num2 + num3;
 end;
 
@@ -14,12 +17,15 @@ begin
 end;
 
 var
- nome:string;
+ nome2:string;
  numero1, numero2, cont: integer;
 begin
+    nome2 := 'Antes\n';
+    Writeln(nome2);
     numero1 := 10;
     numero2 := 20;
-    nome := 'Hello';
     cont := max(numero1, numero2);
     cont := min(numero1, numero2);
+    nome2 := 'Antes\n';
+    Writeln(nome2);
 end.
