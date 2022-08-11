@@ -28,9 +28,12 @@ public abstract class ASTBaseVisitor<T> {
 			case PROGRAM_HEADING_NODE:	return visitProgramHeading(node);
 			case IDENTIFIER_NODE:		return visitIdentifier(node);
 	        case BLOCK_NODE:    		return visitBlock(node);
+	        // case FUNCTION_NODE:    		return visitFunction(node);
 	        case VAR_DECL_PART_NODE:	return visitVarDeclPart(node);
+			case VAR_DECL_NODE:			return visitVarDecl(node);
 	        case IDENTIFIER_LIST_NODE:	return visitIdentifierList(node);
 	        case STATEMENT_LIST_NODE:  	return visitStatementList(node);
+			// case FUNCTION_DESIGN_NODE:  return visitFunctionDesignator(node);
 			case PROCEDURE_DESIGN_NODE: return visitProcedureDesignator(node);
 			case FUNC_IDENT_NODE: 		return visitFuncIdentifier(node);
 			case PARAMETER_LIST_NODE: 	return visitParameterList(node);
@@ -79,11 +82,17 @@ public abstract class ASTBaseVisitor<T> {
 
 	protected abstract T visitBlock(AST node);
 
+	// protected abstract T visitFunction(AST node);
+
 	protected abstract T visitVarDeclPart(AST node);
+
+	protected abstract T visitVarDecl(AST node);
 
 	protected abstract T visitIdentifierList(AST node);
 
 	protected abstract T visitStatementList(AST node);
+
+	// protected abstract T visitFunctionDesignator(AST node);
 
 	protected abstract T visitProcedureDesignator(AST node);
 

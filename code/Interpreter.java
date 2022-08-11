@@ -76,8 +76,29 @@ public class Interpreter extends ASTBaseVisitor<Void> {
 		return null;
 	}
 
+	// @Override
+	// protected Void visitFunction(AST node){
+
+	// 	// Seleciona a função.
+	// 	visit(node.getChild(0));
+
+	// 	// Parametros da função.
+	// 	visit(node.getChild(1));
+
+	// 	// Corpo da função.
+	// 	visit(node.getChild(2));
+
+	// 	return null;
+	// }
+
 	@Override
 	protected Void visitVarDeclPart(AST node){
+		// Nothing to do.
+		return null;
+	}
+
+	@Override
+	protected Void visitVarDecl(AST node){
 		// Nothing to do.
 		return null;
 	}
@@ -98,13 +119,25 @@ public class Interpreter extends ASTBaseVisitor<Void> {
 		return null;
 	}
 
+	// @Override
+	// protected Void visitFunctionDesignator(AST node){
+
+	// 	// Identifica a função.
+	// 	visit(node.getChild(0));
+
+	// 	// Salva os parametros e executa a função.
+	// 	visit(node.getChild(1));
+
+	// 	return null;
+	// }
+
 	@Override
 	protected Void visitProcedureDesignator(AST node){
 
-		// Identifica o procedimento e o executa.
+		// Identifica o procedimento.
 		visit(node.getChild(0));
 
-		// Salva os parametros.
+		// Salva os parametros e executa o procedimento.
 		visit(node.getChild(1));
 
 		return null;
