@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import code.Interpreter;
+import code.CodeGen;
 import parser.pascalLexer;
 import parser.pascalParser;
 import checker.SemanticChecker;
@@ -49,16 +50,19 @@ public class Main {
 		SemanticChecker checker = new SemanticChecker();
 		checker.visit(tree);
 		
-		// Saída final. Se chegou até aqui é porque não houve erro.
-		System.out.println("PARSE SUCCESSFUL!");
-		checker.printTables();
-		checker.printAST();
+		// Saída final. Se chegou até aqui é porque não houve erro de parse.
+		// System.out.println("PARSE SUCCESSFUL!");
+		// checker.printTables();
+		// checker.printAST();
 
-		// Saída final. Se chegou até aqui é porque não houve erro.
-		// Executa o interpretador de código.
-		System.out.println("Saída do Interpretador:");
-		Interpreter interpreter = new Interpreter(checker.st, checker.vt, checker.ft);
-		interpreter.execute(checker.getAST());
+		// Interpretador
+		// System.out.println("Saída do Interpretador:");
+		// Interpreter interpreter = new Interpreter(checker.st, checker.vt, checker.ft);
+		// interpreter.execute(checker.getAST());
+
+		// System.out.println("Saída do Code Gen:");
+		CodeGen codeGen = new CodeGen(checker.st, checker.vt, checker.ft);
+		codeGen.execute(checker.getAST());
 	}
 
 }

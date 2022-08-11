@@ -24,7 +24,11 @@ BIN_PATH=bin
 # Diretório para os casos de teste
 DATA=$(ROOT)/tests
 IN=$(DATA)/in
-OUT=./tests/out
+OUT=./tests/out/
+
+EX=$(DATA)/exp/
+
+OUT_LL=$(OUT)$(basename $(notdir $(FILE))).ll
 
 all: antlr javac
 	@echo "Done."
@@ -41,15 +45,21 @@ javac:
 run:
 	$(JAVA) $(CLASS_PATH_OPTION):$(BIN_PATH) Main $(FILE)
 
-runallparser:
-	-for FILE in $(DATA)/*.pas; do \
-		cd $(GEN_PATH) && \
-		$(GRUN) pascal program $${FILE} &&\
-		cd .. ; \
-	done;
+# This generates the targer <file>.ll
+$(OUT_LL) ll:
+	@mkdir -p tests/out -p
+	@$(JAVA) $(CLASS_PATH_OPTION):$(BIN_PATH) Main $(FILE) > $(OUT_LL)
 
-runparser:
-	cd $(GEN_PATH) && $(GRUN) pascal program -tokens $(FILE)
+# This runs the .ll file generated from the input pascal program
+lli: $(OUT_LL)
+	-@lli $(OUT_LL) || true
+
+runall:
+	@-for FILE in $(EX)*.pas; do \
+	 	echo "Running $${FILE}" && \
+	 	make lli OUT=$(DATA)/out/ FILE=$${FILE} -s &&\
+		echo;\
+	done;
 
 clean:
 	@rm -rf $(GEN_PATH) $(BIN_PATH) $(OUT)
