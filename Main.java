@@ -45,22 +45,19 @@ public class Main {
 			return;
 		}
 
-		// Cria o analisador semântico e visita a ParseTree para
-		// fazer a análise.
+		// Cria o analisador semântico e visita a ParseTree para fazer a análise.
 		SemanticChecker checker = new SemanticChecker();
 		checker.visit(tree);
-		
-		// Saída final. Se chegou até aqui é porque não houve erro de parse.
-		// System.out.println("PARSE SUCCESSFUL!");
 		// checker.printTables();
-		checker.printAST();
+		// checker.printAST();
 
-		// Interpretador
-		// System.out.println("Saída do Interpretador:");
+		// Saída final. Se chegou até aqui é porque não houve erro.
+
+		// Executa o interpretador de código.
 		// Interpreter interpreter = new Interpreter(checker.st, checker.vt, checker.ft);
 		// interpreter.execute(checker.getAST());
 
-		// System.out.println("Saída do Code Gen:");
+		// Executa o gerador de código.
 		CodeGen codeGen = new CodeGen(checker.st, checker.vt, checker.ft);
 		codeGen.execute(checker.getAST());
 	}

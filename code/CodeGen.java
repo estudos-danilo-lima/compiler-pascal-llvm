@@ -65,8 +65,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 		for (int i = 0; i < st.size(); i++) {
 			String s = st.getString(i);
 			int x = newGlobalReg();
-			strs.format("@%d = private constant [%d x i8] c\"%s\\00\"\n", x,
-					s.length() + 1, s);
+			strs.format("@%d = private constant [%d x i8] c\"%s\\00\"\n", x, s.length() + 1, s);
 		}
 	}
 
@@ -97,16 +96,11 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 		return globalRegsCount++;
 	}
 
-	private void resetLocalScope() {
-		localRegsCount = 1;
-		jumpLabel = 0;
-	}
-
 	private int newLocalReg() {
 		return localRegsCount++;
 	}
 
-	// This would be changed to handle multiple function scopes
+
 	private int newJumpLabel() {
 		return jumpLabel++;
 	}
@@ -148,8 +142,8 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	@Override
     protected String visitBlock(AST node){
-
 		// Visita todos os filhos do bloco na ordem.
+		// Função, Variable Declaration e Statements
 		for (int i = 0; i < node.getChildCount(); i++) {
 			visit(node.getChild(i));
 		}
@@ -159,7 +153,6 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	@Override
 	protected String visitVarDeclPart(AST node){
-
 		// Visita todos os filhos do bloco na ordem.
 		for (int i = 0; i < node.getChildCount(); i++) {
 			visit(node.getChild(i));
@@ -174,6 +167,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 		for (int i = 0; i < node.getChildCount(); i++) {
 			visit(node.getChild(i));
 		}
+
 		return "";		
 	}
 
@@ -205,17 +199,16 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 	@Override
 	protected String visitStatementList(AST node){
 		// Visita todos os filhos do bloco na ordem.
+		// Corpo do programa.
 		for (int i = 0; i < node.getChildCount(); i++) {
 			visit(node.getChild(i));
 		}
+
 		return "";
 	}
 
-// Daqui pra cima tudo mais ou menos ok
-
 	@Override
 	protected String visitProcedureDesignator(AST node){
-
 		// Identifica o procedimento.
 		visit(node.getChild(0));
 
@@ -227,7 +220,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	@Override
 	protected String visitFuncIdentifier(AST node){
-
+		// Salva o índice da função para ser usado na function table.
 		functionIDX = node.intData;
 
 		return "";
@@ -235,12 +228,12 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	@Override
 	protected String visitParameterList(AST node){
-
 		if (!declares.contains(printPrototype))
 			declares.add(printPrototype);
 
 		int size = node.getChildCount();
 		
+		// Executa o read
 		if (functionIDX == 0){
 			int varIdx = node.getChild(0).intData;
 			Type varType = vt.getType(varIdx);
@@ -256,10 +249,12 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 					System.exit(1);
 			}
 		}
+		//Executa o write
 		else if (functionIDX == 1){
 			for (int k = 0; k < node.getChildCount(); k++) {
 				AST expr = node.getChild(k);
 				String x = visit(expr);
+
 				switch(expr.type) {
 					case INT_TYPE:  writeInt(x);    break;
 					case REAL_TYPE: writeReal(x);   break;
@@ -271,27 +266,31 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 						System.exit(1);
 				}
 			}
+
 			writeBr();
 		}
+		// Executa outra função
 		else{
 			// Função não implementada
-
-			// for (int i = 0; i < node.getChildCount(); i++) {
-			// 	visit(node.getChild(i));
-			// }
 		}
+
 		functionIDX = -1;
 
 		return "";
 	}
 
+	// ----------------------------------------------------------------------------
+	// ------------------------ Funções Auxiliares de Read ------------------------
+
 	private String readInt(int varIdx) {
 		int x = 0;
+
 		if (!printStrs.containsKey(Print.INT)) {
 			int i = newGlobalReg();
 			Print p = Print.INT.setIndex(i);
 			printStrs.put(Print.INT, p);
 		}
+
 		int a = printStrs.get(Print.INT).index;
 		int pointer = newLocalReg();
 		x = newLocalReg();
@@ -303,11 +302,13 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	private String readReal(int varIdx) {
 		int x = 0;
+
 		if (!printStrs.containsKey(Print.REAL)) {
 			int i = newGlobalReg();
 			Print p = Print.REAL.setIndex(i);
 			printStrs.put(Print.REAL, p);
 		}
+
 		int a = printStrs.get(Print.REAL).index;
 		int pointer = newLocalReg();
 		x = newLocalReg();
@@ -316,6 +317,9 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 		System.out.printf("  %%%d = call i32 (i8*, ...) @__isoc99_scanf(i8* %%%d, double* %%%d)\n", x, pointer, varIdx + 1);
 		return "";
 	}
+
+	// ----------------------------------------------------------------------------
+	// ----------------------- Funções Auxiliares de Write ------------------------
 
 	private String writeInt(String x) {
 		int pointer = newLocalReg();
@@ -326,6 +330,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			Print p = Print.INT.setIndex(i);
 			printStrs.put(Print.INT, p);
 		}
+
 		int a = printStrs.get(Print.INT).index;
 
 		System.out.printf("  %%%d = getelementptr inbounds [3 x i8], [3 x i8]* @%d, i64 0, i64 0\n", pointer, a);
@@ -342,6 +347,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			Print p = Print.REAL.setIndex(i);
 			printStrs.put(Print.REAL, p);
 		}
+
 		int a = printStrs.get(Print.REAL).index;
 
 		System.out.printf("  %%%d = getelementptr inbounds [4 x i8], [4 x i8]* @%d, i64 0, i64 0\n", pointer, a);
@@ -353,16 +359,15 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 		int pointer = newLocalReg();
 		int result = newLocalReg();
 
-		// Printing as INT, as printf doesn't have bool
 		if (!printStrs.containsKey(Print.INT)) {
 			int i = newGlobalReg();
 			Print p = Print.INT.setIndex(i);
 			printStrs.put(Print.INT, p);
 		}
+
 		int a = printStrs.get(Print.INT).index;
 
-		System.out.printf("  %%%d = getelementptr inbounds [3 x i8], [3 x i8]* @%d, i64 0, i64 0\n", pointer,
-				a);
+		System.out.printf("  %%%d = getelementptr inbounds [3 x i8], [3 x i8]* @%d, i64 0, i64 0\n", pointer, a);
 		System.out.printf("  %%%d = call i32 (i8*, ...) @printf(i8* %%%d, i1 %s)\n", result, pointer, x);
 		return "";
 	}
@@ -375,24 +380,18 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			String s = st.getString(Integer.parseInt(x.substring(1)));
 			int len = s.length() + 1;
 
-			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n",
-					pointer,
-					len, len, x);
-			System.out.printf("  %%%d = call i32 (i8*, ...) @printf(i8* %%%d)\n", result,
-					pointer);
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", pointer, len, len, x);
+			System.out.printf("  %%%d = call i32 (i8*, ...) @printf(i8* %%%d)\n", result, pointer);
 		} else {
-			// If there isn't the printf string to print STR type
-			// ("%s\00"), adds it.
 			if (!printStrs.containsKey(Print.STR)) {
 				int i = newGlobalReg();
 				Print p = Print.STR.setIndex(i);
 				printStrs.put(Print.STR, p);
 			}
+
 			int a = printStrs.get(Print.STR).index;
 
-			System.out.printf("  %%%d = getelementptr inbounds [3 x i8], [3 x i8]* @%d, i64 0, i64 0\n",
-					pointer,
-					a);
+			System.out.printf("  %%%d = getelementptr inbounds [3 x i8], [3 x i8]* @%d, i64 0, i64 0\n", pointer, a);
 			System.out.printf("  %%%d = call i32 (i8*, ...) @printf(i8* %%%d, i8* %s)\n", result, pointer, x);
 		}
 		return "";
@@ -407,13 +406,16 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			Print p = Print.CHAR.setIndex(i);
 			printStrs.put(Print.CHAR, p);
 		}
+
 		int a = printStrs.get(Print.CHAR).index;
 
-		System.out.printf("  %%%d = getelementptr inbounds [3 x i8], [3 x i8]* @%d, i64 0, i64 0\n", pointer,
-				a);
+		System.out.printf("  %%%d = getelementptr inbounds [3 x i8], [3 x i8]* @%d, i64 0, i64 0\n", pointer, a);
 		System.out.printf("  %%%d = call i32 (i8*, ...) @printf(i8* %%%d, i8 %s)\n", result, pointer, 10);
 		return "";
 	}
+
+	// ----------------------------------------------------------------------------
+	// -------------------------------- Árvore ------------------------------------
 
 	@Override
     protected String visitAssign(AST node){
@@ -432,8 +434,6 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 				System.out.printf("  store i1 %s, i1* %%%d\n", x, varIdx + 1);
 				break;
 			case STR_TYPE:
-				// String can be pure (@str), which the pointer is needed,
-				// or form register (%num)
 				if (x.startsWith("@")) {
 					int pointer = newLocalReg();
 					String s = st.getString(Integer.parseInt(x.substring(1)));
@@ -471,18 +471,18 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 		String l2 = String.format("if.cont.%d", cont);
 
 		System.out.printf("  br i1 %s, label %%if.true.%d, label %%%s\n", testReg, ifTrue, hasElse ? l1 : l2);
-
 		System.out.printf("\nif.true.%d:\n", ifTrue);
+		
 		visit(node.getChild(1));
-		System.out.printf("  br label %%if.cont.%d\n", cont);
 
+		System.out.printf("  br label %%if.cont.%d\n", cont);
 		System.out.printf("\n%s:\n", hasElse ? l1 : l2);
+
 		if (hasElse) {
 			visit(node.getChild(2));
 			System.out.printf("  br label %%if.cont.%d\n", cont);
 			System.out.printf("\nif.cont.%d:\n", cont);
 		}
-
 		return "";
 	}
 
@@ -520,12 +520,12 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			default:
 				System.err.println("Eq type not known!");
 		}
-
 		return String.format("%%%d", x);
 	}
 
 	private int eqStr(String lexpr, String rexpr){
 		int x = 0;
+
 		if (!declares.contains(compPrototype))
 			declares.add(compPrototype);
 
@@ -534,18 +534,17 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			String s = st.getString(Integer.parseInt(lexpr.substring(1)));
 			int len = s.length() + 1;
 
-			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", b, len,
-					len, lexpr);
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", b, len, len, lexpr);
 
 			lexpr = String.format("%%%d", b);
 		}
+
 		if (rexpr.startsWith("@")) {
 			int c = newLocalReg();
 			String s = st.getString(Integer.parseInt(rexpr.substring(1)));
 			int len = s.length() + 1;
 
-			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", c, len,
-					len, rexpr);
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", c, len, len, rexpr);
 
 			rexpr = String.format("%%%d", c);
 		}
@@ -554,10 +553,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 		x = newLocalReg();
 
 		System.out.printf("  %%%d = call i32 @strcmp(i8* %s, i8* %s)\n", a, lexpr, rexpr);
-
-		// If val = 0, lexpr = rexpr
 		System.out.printf("  %%%d = icmp slt i32 %%%d, 0\n", x, a);
-
 		return x;
 	}
 
@@ -593,12 +589,12 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			default:
 				System.err.println("Gt type not known!");
 		}
-
 		return String.format("%%%d", x);
 	}
 
 	private int gtStr(String lexpr, String rexpr){
 		int x = 0;
+
 		if (!declares.contains(compPrototype))
 			declares.add(compPrototype);
 
@@ -607,18 +603,17 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			String s = st.getString(Integer.parseInt(lexpr.substring(1)));
 			int len = s.length() + 1;
 
-			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", b, len,
-					len, lexpr);
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", b, len, len, lexpr);
 
 			lexpr = String.format("%%%d", b);
 		}
+
 		if (rexpr.startsWith("@")) {
 			int c = newLocalReg();
 			String s = st.getString(Integer.parseInt(rexpr.substring(1)));
 			int len = s.length() + 1;
 
-			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", c, len,
-					len, rexpr);
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", c, len, len, rexpr);
 
 			rexpr = String.format("%%%d", c);
 		}
@@ -627,10 +622,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 		x = newLocalReg();
 
 		System.out.printf("  %%%d = call i32 @strcmp(i8* %s, i8* %s)\n", a, lexpr, rexpr);
-
-		// If val > 0, rexpr is before lexpr
 		System.out.printf("  %%%d = icmp slt i32 %%%d, 0\n", x, a);
-
 		return x;
 	}
 
@@ -666,12 +658,12 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			default:
 				System.err.println("Lt type not known!");
 		}
-
 		return String.format("%%%d", x);
 	}
 
 	private int ltStr(String lexpr, String rexpr){
 		int x = 0;
+
 		if (!declares.contains(compPrototype))
 			declares.add(compPrototype);
 
@@ -680,18 +672,17 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			String s = st.getString(Integer.parseInt(lexpr.substring(1)));
 			int len = s.length() + 1;
 
-			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", b, len,
-					len, lexpr);
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", b, len, len, lexpr);
 
 			lexpr = String.format("%%%d", b);
 		}
+
 		if (rexpr.startsWith("@")) {
 			int c = newLocalReg();
 			String s = st.getString(Integer.parseInt(rexpr.substring(1)));
 			int len = s.length() + 1;
 
-			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", c, len,
-					len, rexpr);
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", c, len, len, rexpr);
 
 			rexpr = String.format("%%%d", c);
 		}
@@ -700,10 +691,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 		x = newLocalReg();
 
 		System.out.printf("  %%%d = call i32 @strcmp(i8* %s, i8* %s)\n", a, lexpr, rexpr);
-
-		// If val < 0, lexpr is before rexpr
 		System.out.printf("  %%%d = icmp slt i32 %%%d, 0\n", x, a);
-
 		return x;
 	}
 
@@ -714,15 +702,16 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 		int cont = newJumpLabel();
 		
 		System.out.printf("  br label %%while.test.%d\n", test);
-
 		System.out.printf("\nwhile.test.%d:\n", test);
+
 		String testReg = visit(node.getChild(0));
+
 		System.out.printf("  br i1 %s, label %%while.repeat.%d, label %%while.cont.%d\n", testReg, repeat, cont);
-
 		System.out.printf("\nwhile.repeat.%d:\n", repeat);
-		visit(node.getChild(1));
-		System.out.printf("  br label %%while.test.%d\n", test);
 
+		visit(node.getChild(1));
+
+		System.out.printf("  br label %%while.test.%d\n", test);
 		System.out.printf("\nwhile.cont.%d:\n", cont);
 		return "";
 	}
@@ -745,7 +734,6 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			default:
 				System.err.println("This type is impossible to sub");
 		}
-
 		return String.format("%%%d", x);
 	}
 
@@ -767,7 +755,6 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			default:
 				System.err.println("This type is impossible to divide");
 		}
-
 		return String.format("%%%d", x);
 	}
 
@@ -789,7 +776,6 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			default:
 				System.err.println("This type is impossible to add");
 		}
-
 		return String.format("%%%d", x);
 	}
 
@@ -811,7 +797,6 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			default:
 				System.err.println("This type is impossible to mul");
 		}
-
 		return String.format("%%%d", x);
 	}
 
@@ -837,7 +822,6 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			default:
 				System.err.println("Missing VarUse!");
 		}
-
 		return String.format("%%%d", x);
 	}
 
@@ -854,11 +838,13 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 	@Override
     protected String visitBoolVal(AST node){
 		boolean x;
+
 		if (node.intData == 0) {
 			x = false;
 		} else {
 			x = true;
 		}
+
 		String val = Boolean.toString(x);
 		return val;
 	}
@@ -881,8 +867,8 @@ public final class CodeGen extends ASTBaseVisitor<String> {
     protected String visitI2R(AST node){
 		String i = visit(node.getChild(0));
 		int r = newLocalReg();
+		
 		System.out.printf("  %%%d = sitofp i32 %s to double\n", r, i);
-
 		return String.format("%%%d", r);
 	}
 
@@ -893,4 +879,3 @@ public final class CodeGen extends ASTBaseVisitor<String> {
     protected String visitR2S(AST node){return "";}
 
 }
-
