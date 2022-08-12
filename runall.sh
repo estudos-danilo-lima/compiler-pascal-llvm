@@ -1,6 +1,3 @@
-#!/bin/bash
-#YEAR=$(pwd | grep -o '20..-.')
-# Ajeite essa variável como feito no Makefile
 ROOT=$(pwd)
 DATA=$ROOT/tests
 IN=$DATA/in

@@ -23,10 +23,8 @@ BIN_PATH=bin
 
 # Diretório para os casos de teste
 DATA=$(ROOT)/tests
-IN=$(DATA)/in
+IN=$(DATA)/in/
 OUT=./tests/out/
-
-EX=$(DATA)/exp/
 
 OUT_LL=$(OUT)$(basename $(notdir $(FILE))).ll
 
@@ -55,7 +53,7 @@ lli: $(OUT_LL)
 	-@lli $(OUT_LL) || true
 
 runall:
-	@-for FILE in $(EX)*.pas; do \
+	@-for FILE in $(IN)*.pas; do \
 	 	echo "Running $${FILE}" && \
 	 	make lli OUT=$(DATA)/out/ FILE=$${FILE} -s &&\
 		echo;\
