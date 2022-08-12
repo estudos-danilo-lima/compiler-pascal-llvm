@@ -417,8 +417,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	@Override
     protected String visitAssign(AST node){
-		AST r = node.getChild(1);
-	    String x = visit(r);
+	    String x = visit(node.getChild(1));
 	    int varIdx = node.getChild(0).intData;
 	    Type varType = vt.getType(varIdx);
 
@@ -457,164 +456,286 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	@Override
     protected String visitIf(AST node){
-	// 	// Visita a expressão de teste.
-	// 	visit(node.getChild(0));
-	// 	int test = stack.popi();
-	// 	if (test == 1) { // THEN
-	// 		visit(node.getChild(1));
-	// 	} else if (test == 0 && node.getChildCount() == 3) { // ELSE, se houver
-	// 		visit(node.getChild(2));
-	// 	}
-		return null;
+		String testReg = visit(node.getChild(0));
+		boolean hasElse = node.getChildCount() == 3;
+
+		int ifTrue = newJumpLabel();
+		int ifFalse = 0;
+
+		if (hasElse)
+			ifFalse = newJumpLabel();
+
+		int cont = newJumpLabel();
+
+		String l1 = String.format("if.false.%d", ifFalse);
+		String l2 = String.format("if.cont.%d", cont);
+
+		System.out.printf("  br i1 %s, label %%if.true.%d, label %%%s\n", testReg, ifTrue, hasElse ? l1 : l2);
+
+		System.out.printf("\nif.true.%d:\n", ifTrue);
+		visit(node.getChild(1));
+		System.out.printf("  br label %%if.cont.%d\n", cont);
+
+		System.out.printf("\n%s:\n", hasElse ? l1 : l2);
+		if (hasElse) {
+			visit(node.getChild(2));
+			System.out.printf("  br label %%if.cont.%d\n", cont);
+			System.out.printf("\nif.cont.%d:\n", cont);
+		}
+
+		return "";
 	}
 
 	@Override
 	protected String visitElse(AST node){
-	// 	visit(node.getChild(0));
+		visit(node.getChild(0));
 		return "";
 	}
 
 	@Override
     protected String visitEq(AST node){
-	// 	// Executa as subexpressões cujos valores vão ficar na pilha.
-	// 	AST lexpr = node.getChild(0);
-	// 	AST rexpr = node.getChild(1);
-	// 	visit(lexpr);
-	// 	visit(rexpr);
-	// 	// Poderia usar 'lexpr' também no teste abaixo, já que
-	// 	// ambos os lados são garantidamente do mesmo tipo,
-	// 	// por conta dos eventuais nós de conversão.
-	// 	if (rexpr.type == INT_TYPE) {
-	// 		int r = stack.popi();
-	//         int l = stack.popi();
-	//         stack.pushi(l == r ? 1 : 0); // 1 = true; 0 = false
-	// 	} else if (rexpr.type == REAL_TYPE) {
-	// 		float r = stack.popf();
-	//         float l = stack.popf();
-	//         stack.pushi(l == r ? 1 : 0);
-	// 	} else { // Must be STR_TYPE
-	// 		int r = stack.popi();
-	//         int l = stack.popi();
-	//         String ls = st.get(l);
-	//         String rs = st.get(r);
-	//         stack.pushi(ls.compareTo(rs) == 0 ? 1 : 0);
-	// 	}
-		return null;
+		String lexpr = visit(node.getChild(0));
+		String rexpr = visit(node.getChild(1));
+		int x = 0;
+
+		AST r_node = node.getChild(1);
+
+		switch (r_node.type){
+			case INT_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = icmp sgt eq %s, %s\n", x, lexpr, rexpr);
+				break;
+			case REAL_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = fcmp oeq double %s, %s\n", x, lexpr, rexpr);
+				break;
+			case BOOL_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = icmp eq i1 %s, %s\n", x, lexpr, rexpr);
+				break;
+			case STR_TYPE:
+				x = eqStr(lexpr, rexpr);
+				break;
+			case NO_TYPE:
+			default:
+				System.err.println("Eq type not known!");
+		}
+
+		return String.format("%%%d", x);
+	}
+
+	private int eqStr(String lexpr, String rexpr){
+		int x = 0;
+		if (!declares.contains(compPrototype))
+			declares.add(compPrototype);
+
+		if (lexpr.startsWith("@")) {
+			int b = newLocalReg();
+			String s = st.getString(Integer.parseInt(lexpr.substring(1)));
+			int len = s.length() + 1;
+
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", b, len,
+					len, lexpr);
+
+			lexpr = String.format("%%%d", b);
+		}
+		if (rexpr.startsWith("@")) {
+			int c = newLocalReg();
+			String s = st.getString(Integer.parseInt(rexpr.substring(1)));
+			int len = s.length() + 1;
+
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", c, len,
+					len, rexpr);
+
+			rexpr = String.format("%%%d", c);
+		}
+
+		int a = newLocalReg();
+		x = newLocalReg();
+
+		System.out.printf("  %%%d = call i32 @strcmp(i8* %s, i8* %s)\n", a, lexpr, rexpr);
+
+		// If val = 0, z = y
+		System.out.printf("  %%%d = icmp slt i32 %%%d, 0\n", x, a);
+
+		return x;
 	}
 
 	@Override
 	protected String visitGt(AST node) {
-	// 	AST lexpr = node.getChild(0);
-	// 	AST rexpr = node.getChild(1);
-	// 	visit(lexpr);
-	// 	visit(rexpr);
-	// 	// Poderia usar 'lexpr' também no teste abaixo, já que
-	// 	// ambos os lados são garantidamente do mesmo tipo,
-	// 	// por conta dos eventuais nós de conversão.
-	// 	if (rexpr.type == INT_TYPE) {
-	// 		int r = stack.popi();
-	//         int l = stack.popi();
-	//         stack.pushi(l > r ? 1 : 0);
-	// 	} else if (rexpr.type == REAL_TYPE) {
-	// 		float r = stack.popf();
-	//         float l = stack.popf();
-	//         stack.pushi(l > r ? 1 : 0);
-	// 	} else { // Must be STR_TYPE
-	// 		int r = stack.popi();
-	//         int l = stack.popi();
-	//         String ls = st.get(l);
-	//         String rs = st.get(r);
-	//         stack.pushi(ls.compareTo(rs) > 0 ? 1 : 0);
-	// 	}
-		return null;
+		String lexpr = visit(node.getChild(0));
+		String rexpr = visit(node.getChild(1));
+		int x = 0;
+
+		AST r_node = node.getChild(1);
+
+		switch (r_node.type){
+			case INT_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = icmp sgt i32 %s, %s\n", x, lexpr, rexpr);
+				break;
+			case REAL_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = fcmp ogt double %s, %s\n", x, lexpr, rexpr);
+				break;
+			case BOOL_TYPE:
+				int convY = newLocalReg();
+				int convZ = newLocalReg();
+				x = newLocalReg();
+				System.out.printf("  %%%d = zext i1 %s to i32\n", convY, lexpr);
+				System.out.printf("  %%%d = zext i1 %s to i32\n", convZ, rexpr);
+				System.out.printf("  %%%d = icmp sgt i32 %%%d, %%%d\n", x, convY, convZ);
+				break;
+			case STR_TYPE:
+				x = gtStr(lexpr, rexpr);
+				break;
+			case NO_TYPE:
+			default:
+				System.err.println("Gt type not known!");
+		}
+
+		return String.format("%%%d", x);
+	}
+
+	private int gtStr(String lexpr, String rexpr){
+		int x = 0;
+		if (!declares.contains(compPrototype))
+			declares.add(compPrototype);
+
+		if (lexpr.startsWith("@")) {
+			int b = newLocalReg();
+			String s = st.getString(Integer.parseInt(lexpr.substring(1)));
+			int len = s.length() + 1;
+
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", b, len,
+					len, lexpr);
+
+			lexpr = String.format("%%%d", b);
+		}
+		if (rexpr.startsWith("@")) {
+			int c = newLocalReg();
+			String s = st.getString(Integer.parseInt(rexpr.substring(1)));
+			int len = s.length() + 1;
+
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", c, len,
+					len, rexpr);
+
+			rexpr = String.format("%%%d", c);
+		}
+
+		int a = newLocalReg();
+		x = newLocalReg();
+
+		System.out.printf("  %%%d = call i32 @strcmp(i8* %s, i8* %s)\n", a, lexpr, rexpr);
+
+		// If val > 0, z is before y
+		System.out.printf("  %%%d = icmp slt i32 %%%d, 0\n", x, a);
+
+		return x;
 	}
 
 	@Override
     protected String visitLt(AST node){
-	// 	AST lexpr = node.getChild(0);
-	// 	AST rexpr = node.getChild(1);
-	// 	visit(lexpr);
-	// 	visit(rexpr);
-	// 	// Poderia usar 'lexpr' também no teste abaixo, já que
-	// 	// ambos os lados são garantidamente do mesmo tipo,
-	// 	// por conta dos eventuais nós de conversão.
-	// 	if (rexpr.type == INT_TYPE) {
-	// 		int r = stack.popi();
-	//         int l = stack.popi();
-	//         stack.pushi(l < r ? 1 : 0);
-	// 	} else if (rexpr.type == REAL_TYPE) {
-	// 		float r = stack.popf();
-	//         float l = stack.popf();
-	//         stack.pushi(l < r ? 1 : 0);
-	// 	} else { // Must be STR_TYPE
-	// 		int r = stack.popi();
-	//         int l = stack.popi();
-	//         String ls = st.get(l);
-	//         String rs = st.get(r);
-	//         stack.pushi(ls.compareTo(rs) < 0 ? 1 : 0);
-	// 	}
-		return null;
+		String lexpr = visit(node.getChild(0));
+		String rexpr = visit(node.getChild(1));
+		int x = 0;
+
+		AST r_node = node.getChild(1);
+
+		switch (r_node.type){
+			case INT_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = icmp slt i32 %s, %s\n", x, lexpr, rexpr);
+				break;
+			case REAL_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = fcmp olt double %s, %s\n", x, lexpr, rexpr);
+				break;
+			case BOOL_TYPE:
+				int convY = newLocalReg();
+				int convZ = newLocalReg();
+				x = newLocalReg();
+				System.out.printf("  %%%d = zext i1 %s to i32\n", convY, lexpr);
+				System.out.printf("  %%%d = zext i1 %s to i32\n", convZ, rexpr);
+				System.out.printf("  %%%d = icmp slt i32 %%%d, %%%d\n", x, convY, convZ);
+				break;
+			case STR_TYPE:
+				x = ltStr(lexpr, rexpr);
+				break;
+			case NO_TYPE:
+			default:
+				System.err.println("Lt type not known!");
+		}
+
+		return String.format("%%%d", x);
+	}
+
+	private int ltStr(String lexpr, String rexpr){
+		int x = 0;
+		if (!declares.contains(compPrototype))
+			declares.add(compPrototype);
+
+		if (lexpr.startsWith("@")) {
+			int b = newLocalReg();
+			String s = st.getString(Integer.parseInt(lexpr.substring(1)));
+			int len = s.length() + 1;
+
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", b, len,
+					len, lexpr);
+
+			lexpr = String.format("%%%d", b);
+		}
+		if (rexpr.startsWith("@")) {
+			int c = newLocalReg();
+			String s = st.getString(Integer.parseInt(rexpr.substring(1)));
+			int len = s.length() + 1;
+
+			System.out.printf("  %%%d = getelementptr inbounds [%d x i8], [%d x i8]* %s, i64 0, i64 0\n", c, len,
+					len, rexpr);
+
+			rexpr = String.format("%%%d", c);
+		}
+
+		int a = newLocalReg();
+		x = newLocalReg();
+
+		System.out.printf("  %%%d = call i32 @strcmp(i8* %s, i8* %s)\n", a, lexpr, rexpr);
+
+		// If val < 0, y is before z
+		System.out.printf("  %%%d = icmp slt i32 %%%d, 0\n", x, a);
+
+		return x;
 	}
 
 	@Override
     protected String visitRepeat(AST node){
-	// 	// Usando um loop para implementar um loop, que coisa "meta" isso... :P
-	// 	int again = 1;
-	//     while (again == 1) {
-	//     	visit(node.getChild(1)); // run body
-	// 		visit(node.getChild(0)); // run test
-	//         again = (stack.popi() == 1? 1 : 0); // again = !popi();
-	//     }
 	    return null;
 	}
 
 	@Override
     protected String visitMinus(AST node){
-	// 	visit(node.getChild(0));
-	// 	visit(node.getChild(1));
-	// 	if (node.type == INT_TYPE) {
-	//         int r = stack.popi();
-	//         int l = stack.popi();
-	//         stack.pushi(l - r);
-	//     } else { // Result must be REAL_TYPE.
-	//         float r = stack.popf();
-	//         float l = stack.popf();
-	//         stack.pushf(l - r);
-	//     }
 		return null;
 	}
 
 	@Override
     protected String visitOver(AST node){
-	// 	visit(node.getChild(0));
-	// 	visit(node.getChild(1));
-	// 	if (node.type == INT_TYPE) {
-	//         int r = stack.popi();
-	//         int l = stack.popi();
-	//         stack.pushi(l / r);
-	//     } else { // Result must be REAL_TYPE.
-	//         float r = stack.popf();
-	//         float l = stack.popf();
-	//         stack.pushf(l / r);
-	//     }
 		return null;
 	}
 
 	@Override
     protected String visitPlus(AST node){
-
-		String y = visit(node.getChild(0));
-		String z = visit(node.getChild(1));
+		String lexpr = visit(node.getChild(0));
+		String rexpr = visit(node.getChild(1));
 		int x = 0;
 
 		switch(node.type){
 			case INT_TYPE:
 				x = newLocalReg();
-				System.out.printf("  %%%d = add i32 %s, %s\n", x, y, z);
+				System.out.printf("  %%%d = add i32 %s, %s\n", x, lexpr, rexpr);
 				break;
 			case REAL_TYPE:
 				x = newLocalReg();
-				System.out.printf("  %%%d = fadd double %s, %s\n", x, y, z);
+				System.out.printf("  %%%d = fadd double %s, %s\n", x, lexpr, rexpr);
 				break;
 			case STR_TYPE:
 				// Requires LLVM memory handling to avoid degmentation faults
@@ -630,17 +751,6 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	@Override
     protected String visitTimes(AST node){
-	// 	visit(node.getChild(0));
-	// 	visit(node.getChild(1));
-	// 	if (node.type == INT_TYPE) {
-	//         int r = stack.popi();
-	//         int l = stack.popi();
-	//         stack.pushi(l * r);
-	//     } else { // Result must be REAL_TYPE.
-	//         float r = stack.popf();
-	//         float l = stack.popf();
-	//         stack.pushf(l * r);
-	//     }
 		return "";
 	}
 
