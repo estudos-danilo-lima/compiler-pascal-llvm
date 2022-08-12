@@ -709,7 +709,22 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	@Override
     protected String visitRepeat(AST node){
-	    return null;
+		int test = newJumpLabel();
+		int repeat = newJumpLabel();
+		int cont = newJumpLabel();
+		
+		System.out.printf("  br label %%while.test.%d\n", test);
+
+		System.out.printf("\nwhile.test.%d:\n", test);
+		String testReg = visit(node.getChild(0));
+		System.out.printf("  br i1 %s, label %%while.repeat.%d, label %%while.cont.%d\n", testReg, repeat, cont);
+
+		System.out.printf("\nwhile.repeat.%d:\n", repeat);
+		visit(node.getChild(1));
+		System.out.printf("  br label %%while.test.%d\n", test);
+
+		System.out.printf("\nwhile.cont.%d:\n", cont);
+		return "";
 	}
 
 	@Override
