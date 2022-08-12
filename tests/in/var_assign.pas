@@ -6,5 +6,6 @@ begin
     nome := 'Hello';
     num := 1 + 2;
     cont := 3;
-    Writeln(cont);
+    Writeln(cont, '\n');
+    Writeln(nome, '\n');
 end.
