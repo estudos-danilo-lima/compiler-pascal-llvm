@@ -4,8 +4,8 @@ var
  num,cont:integer;
 begin
     num := 1 + 2;
-    nome1 := 'If\n';
-    nome2 := 'Else\n';
+    nome1 := 'If';
+    nome2 := 'Else';
     if num < 2 then
         Writeln(nome1)
     else

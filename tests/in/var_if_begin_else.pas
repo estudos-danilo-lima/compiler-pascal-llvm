@@ -6,7 +6,7 @@ begin
     num := 1 + 2;
     if num > 2 then
     begin
-        nome := 'If Begin\n';
+        nome := 'If Begin';
         Writeln(nome);
     end
     else
