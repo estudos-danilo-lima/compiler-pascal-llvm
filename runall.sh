@@ -17,6 +17,6 @@ for infile in `ls $IN/*.pas`; do
     dotfile=$OUT/${base/.pas/.dot}
     pdffile=$OUT/${base/.pas/.pdf}
     echo Running $base
-    java $CLASS_PATH_OPTION:bin checker/Main $infile 1> $outfile 2> $dotfile
+    java $CLASS_PATH_OPTION:bin Main $infile 1> $outfile 2> $dotfile
     dot -Tpdf $dotfile -o $pdffile
 done

@@ -53,7 +53,7 @@ public class Main {
 		// Saída final. Se chegou até aqui é porque não houve erro de parse.
 		// System.out.println("PARSE SUCCESSFUL!");
 		// checker.printTables();
-		// checker.printAST();
+		checker.printAST();
 
 		// Interpretador
 		// System.out.println("Saída do Interpretador:");
