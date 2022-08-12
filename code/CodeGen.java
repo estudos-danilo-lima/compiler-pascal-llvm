@@ -257,18 +257,21 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			}
 		}
 		else if (functionIDX == 1){
-			AST expr = node.getChild(0);
-			String x = visit(expr);
-			switch(expr.type) {
-				case INT_TYPE:  writeInt(x);    break;
-				case REAL_TYPE: writeReal(x);   break;
-				case BOOL_TYPE: writeBool(x);   break;
-				case STR_TYPE:  writeStr(x);    break;
-				case NO_TYPE:
-				default:
-					System.err.printf("Invalid type: %s!\n", expr.type.toString());
-					System.exit(1);
+			for (int k = 0; k < node.getChildCount(); k++) {
+				AST expr = node.getChild(k);
+				String x = visit(expr);
+				switch(expr.type) {
+					case INT_TYPE:  writeInt(x);    break;
+					case REAL_TYPE: writeReal(x);   break;
+					case BOOL_TYPE: writeBool(x);   break;
+					case STR_TYPE:  writeStr(x);    break;
+					case NO_TYPE:
+					default:
+						System.err.printf("Invalid type: %s!\n", expr.type.toString());
+						System.exit(1);
+				}
 			}
+			writeBr();
 		}
 		else{
 			// Função não implementada
@@ -392,6 +395,23 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 					a);
 			System.out.printf("  %%%d = call i32 (i8*, ...) @printf(i8* %%%d, i8* %s)\n", result, pointer, x);
 		}
+		return "";
+	}
+
+	private String writeBr(){
+		int pointer = newLocalReg();
+		int result = newLocalReg();
+
+		if (!printStrs.containsKey(Print.CHAR)) {
+			int i = newGlobalReg();
+			Print p = Print.CHAR.setIndex(i);
+			printStrs.put(Print.CHAR, p);
+		}
+		int a = printStrs.get(Print.CHAR).index;
+
+		System.out.printf("  %%%d = getelementptr inbounds [3 x i8], [3 x i8]* @%d, i64 0, i64 0\n", pointer,
+				a);
+		System.out.printf("  %%%d = call i32 (i8*, ...) @printf(i8* %%%d, i8 %s)\n", result, pointer, 10);
 		return "";
 	}
 
@@ -603,19 +623,6 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 			case NO_TYPE:
 			default:
 				System.err.println("This type is impossible to add");
-		}
-
-		if (node.type == INT_TYPE) {
-			x = newLocalReg();
-			System.out.printf("  %%%d = add i32 %s, %s\n", x, y, z);
-		} else if (node.type == REAL_TYPE) {
-			x = newLocalReg();
-			System.out.printf("  %%%d = fadd double %s, %s\n", x, y, z);
-		} else if (node.type == STR_TYPE) {
-			// Requires LLVM memory handling to avoid degmentation faults
-			// could be handled with @strcat
-		} else {
-			System.err.println("This type is impossible to add");
 		}
 
 		return String.format("%%%d", x);

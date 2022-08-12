@@ -543,21 +543,23 @@ public class SemanticChecker extends pascalBaseVisitor<AST> {
         String text = ctx.identifier().IDENT().getSymbol().getText();
         int idx = ft.lookupFunc(text);
         int line = token.getLine();
-        ArrayList<typing.Type> parameters_esperados = ft.getParameters(idx);
 
-        // Compara os parametros que foram lidos com os esperados da função.
-        if (parameters.size() != parameters_esperados.size()){
-            System.err.printf("SEMANTIC ERROR (%d): function '%s' mismatch number of arguments.\n", line, text);
-            System.exit(1);
-        }
+        if (idx != 1 && idx != 0){
+            ArrayList<typing.Type> parameters_esperados = ft.getParameters(idx);
 
-        for (int i=0; i<parameters.size(); i++){
-            if (parameters.get(i) != parameters_esperados.get(i)){
-                System.err.printf("SEMANTIC ERROR (%d): function '%s' mismatch type of arguments.\n", line, text);
+            // Compara os parametros que foram lidos com os esperados da função.
+            if (parameters.size() != parameters_esperados.size()){
+                System.err.printf("SEMANTIC ERROR (%d): function '%s' mismatch number of arguments.\n", line, text);
                 System.exit(1);
             }
-        }
 
+            for (int i=0; i<parameters.size(); i++){
+                if (parameters.get(i) != parameters_esperados.get(i)){
+                    System.err.printf("SEMANTIC ERROR (%d): function '%s' mismatch type of arguments.\n", line, text);
+                    System.exit(1);
+                }
+            }
+        }
         parameters.clear();
         CheckParameter = false;
 
