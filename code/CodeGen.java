@@ -555,7 +555,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 		System.out.printf("  %%%d = call i32 @strcmp(i8* %s, i8* %s)\n", a, lexpr, rexpr);
 
-		// If val = 0, z = y
+		// If val = 0, lexpr = rexpr
 		System.out.printf("  %%%d = icmp slt i32 %%%d, 0\n", x, a);
 
 		return x;
@@ -628,7 +628,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 		System.out.printf("  %%%d = call i32 @strcmp(i8* %s, i8* %s)\n", a, lexpr, rexpr);
 
-		// If val > 0, z is before y
+		// If val > 0, rexpr is before lexpr
 		System.out.printf("  %%%d = icmp slt i32 %%%d, 0\n", x, a);
 
 		return x;
@@ -701,7 +701,7 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 		System.out.printf("  %%%d = call i32 @strcmp(i8* %s, i8* %s)\n", a, lexpr, rexpr);
 
-		// If val < 0, y is before z
+		// If val < 0, lexpr is before rexpr
 		System.out.printf("  %%%d = icmp slt i32 %%%d, 0\n", x, a);
 
 		return x;
@@ -714,12 +714,46 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	@Override
     protected String visitMinus(AST node){
-		return null;
+		String lexpr = visit(node.getChild(0));
+		String rexpr = visit(node.getChild(1));
+		int x = 0;
+
+		switch(node.type){
+			case INT_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = sub i32 %s, %s\n", x, lexpr, rexpr);
+				break;
+			case REAL_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = fsub double %s, %s\n", x, lexpr, rexpr);
+				break;
+			default:
+				System.err.println("This type is impossible to sub");
+		}
+
+		return String.format("%%%d", x);
 	}
 
 	@Override
     protected String visitOver(AST node){
-		return null;
+		String lexpr = visit(node.getChild(0));
+		String rexpr = visit(node.getChild(1));
+		int x = 0;
+
+		switch(node.type){
+			case INT_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = sdiv i32 %s, %s\n", x, lexpr, rexpr);
+				break;
+			case REAL_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = fdiv double %s, %s\n", x, lexpr, rexpr);
+				break;
+			default:
+				System.err.println("This type is impossible to divide");
+		}
+
+		return String.format("%%%d", x);
 	}
 
 	@Override
@@ -737,11 +771,6 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 				x = newLocalReg();
 				System.out.printf("  %%%d = fadd double %s, %s\n", x, lexpr, rexpr);
 				break;
-			case STR_TYPE:
-				// Requires LLVM memory handling to avoid degmentation faults
-				// could be handled with @strcat
-				break;
-			case NO_TYPE:
 			default:
 				System.err.println("This type is impossible to add");
 		}
@@ -751,7 +780,24 @@ public final class CodeGen extends ASTBaseVisitor<String> {
 
 	@Override
     protected String visitTimes(AST node){
-		return "";
+		String lexpr = visit(node.getChild(0));
+		String rexpr = visit(node.getChild(1));
+		int x = 0;
+
+		switch (node.type){
+			case INT_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = mul i32 %s, %s\n", x, lexpr, rexpr);
+				break;
+			case REAL_TYPE:
+				x = newLocalReg();
+				System.out.printf("  %%%d = fmul double %s, %s\n", x, lexpr, rexpr);
+				break;
+			default:
+				System.err.println("This type is impossible to mul");
+		}
+
+		return String.format("%%%d", x);
 	}
 
 	@Override
